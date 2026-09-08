@@ -1,0 +1,806 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="robots" content="noindex, nofollow, noarchive">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<title>Stock de Causas — Ranking para Tabla</title>
+<style>
+:root{
+  --azul-profundo:#0F2A4A; --azul-noche:#0B2038; --azul-medio:#1D4E7E; --azul-claro:#E8EEF5;
+  --acento:#D6336C; --fondo:#F7F8FA; --superficie:#FFFFFF;
+  --texto:#1A1F2E; --texto-suave:#5B6478; --borde:#E2E6ED;
+  --verde:#1E8E5A; --ambar:#D97E00; --rojo:#C0392B; --purpura:#7C4DA8; --gris:#6B7686;
+  --cian:#39C4D6;
+  --e1:4px; --e2:8px; --e3:16px; --e4:24px; --e5:32px;
+  --radio:10px; --sombra:0 1px 2px rgba(15,42,74,.06), 0 4px 16px rgba(15,42,74,.05);
+  --transicion:180ms cubic-bezier(.4,0,.2,1);
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;background:var(--fondo);color:var(--texto);
+  font-family:-apple-system,'Segoe UI',Roboto,Arial,sans-serif;font-size:14px;}
+.oculto{display:none!important;}
+button{font-family:inherit;cursor:pointer;}
+input,select,textarea{font-family:inherit;font-size:14px;}
+
+/* -------- pantallas oscuras (login / bienvenida) -------- */
+.pantalla-oscura{position:fixed;inset:0;background:
+    radial-gradient(1200px 600px at 15% 0%, #16375c 0%, transparent 60%),
+    radial-gradient(1000px 700px at 100% 100%, #0f2c4c 0%, transparent 55%),
+    linear-gradient(160deg,var(--azul-noche),var(--azul-profundo));
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  z-index:100;padding:var(--e4);overflow-y:auto;}
+.marca{text-align:center;margin-bottom:var(--e4);}
+.marca .icono{width:76px;height:76px;margin:0 auto 14px;display:block;}
+.marca h1{color:#fff;font-size:21px;margin:0;}
+.marca p{color:#9db3cc;font-size:13px;margin:6px 0 0;}
+
+.caja-login{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);
+  border-radius:var(--radio);padding:var(--e5);width:min(380px,92vw);
+  box-shadow:0 20px 60px rgba(0,0,0,.35);backdrop-filter:blur(6px);}
+.caja-login label{display:block;color:#cfe0f0;font-weight:600;font-size:12.5px;margin-bottom:8px;}
+.caja-login input{width:100%;padding:13px;border:1px solid rgba(255,255,255,.25);border-radius:8px;
+  margin-bottom:var(--e3);background:rgba(255,255,255,.08);color:#fff;}
+.caja-login input::placeholder{color:#8fa5bd;}
+.caja-login input:focus{outline:none;border-color:var(--acento);}
+.caja-login button{width:100%;padding:13px;border:none;border-radius:8px;background:var(--acento);color:#fff;
+  font-weight:700;font-size:14px;transition:var(--transicion);}
+.caja-login button:hover{filter:brightness(1.1);}
+.error-login{color:#ff8fa8;font-size:12.5px;margin-top:var(--e2);min-height:16px;text-align:center;}
+
+.grid-bienvenida{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:var(--e3);
+  max-width:1100px;width:100%;margin-top:var(--e4);}
+.tarjeta-bienvenida{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);
+  border-radius:var(--radio);padding:var(--e4) var(--e3);cursor:pointer;transition:var(--transicion);
+  opacity:0;transform:translateY(14px);animation:aparecer 420ms ease forwards;}
+@media (prefers-reduced-motion: reduce){.tarjeta-bienvenida{animation:none;opacity:1;transform:none;}}
+@keyframes aparecer{to{opacity:1;transform:translateY(0);}}
+.tarjeta-bienvenida:hover{background:rgba(255,255,255,.11);border-color:var(--acento);transform:translateY(-2px);}
+.tarjeta-bienvenida .num{width:26px;height:26px;border-radius:50%;background:var(--acento);color:#fff;
+  font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;margin-bottom:12px;}
+.tarjeta-bienvenida h3{color:#fff;font-size:14.5px;margin:0 0 6px;}
+.tarjeta-bienvenida p{color:#a9bdd3;font-size:12.5px;margin:0;line-height:1.45;}
+.pie-bienvenida{color:#6f88a3;font-size:11px;letter-spacing:.04em;margin-top:var(--e5);text-transform:uppercase;}
+
+/* -------- layout app -------- */
+#app{max-width:min(1520px,96vw);margin:0 auto;padding-bottom:var(--e5);}
+header.top{background:var(--azul-profundo);color:#fff;border-bottom:3px solid var(--acento);
+  padding:var(--e3) var(--e4);margin-bottom:var(--e3);display:flex;align-items:center;
+  justify-content:space-between;gap:var(--e3);flex-wrap:wrap;}
+header.top .marca-top{display:flex;align-items:center;gap:12px;}
+header.top .marca-top img,header.top .marca-top svg{width:38px;height:38px;flex:none;}
+header.top h1{margin:0;font-size:16.5px;}
+header.top p{margin:2px 0 0;color:#a9bdd3;font-size:11.5px;}
+.acciones-header{display:flex;align-items:center;gap:var(--e2);}
+.acciones-header .estado-servicio{font-size:11.5px;color:#9fd8b8;display:flex;align-items:center;gap:6px;}
+.acciones-header .estado-servicio .punto{width:7px;height:7px;border-radius:50%;background:var(--verde);}
+button.btn-header{background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.18);
+  border-radius:8px;padding:8px 14px;font-size:12.5px;font-weight:600;transition:var(--transicion);}
+button.btn-header:hover{background:rgba(255,255,255,.18);}
+
+nav.etapas{display:flex;gap:var(--e2);flex-wrap:wrap;padding:0 var(--e4);margin-bottom:var(--e4);
+  position:sticky;top:0;background:var(--fondo);z-index:10;padding-top:var(--e2);padding-bottom:var(--e2);}
+nav.etapas button{display:flex;align-items:center;gap:8px;background:var(--superficie);border:1px solid var(--borde);
+  border-radius:999px;padding:8px 16px 8px 8px;font-size:13px;font-weight:600;color:var(--texto-suave);transition:var(--transicion);}
+nav.etapas button .badge{width:22px;height:22px;border-radius:50%;background:var(--azul-claro);color:var(--azul-profundo);
+  font-size:11.5px;font-weight:700;display:flex;align-items:center;justify-content:center;flex:none;}
+nav.etapas button.activa{background:var(--azul-profundo);color:#fff;border-color:var(--azul-profundo);}
+nav.etapas button.activa .badge{background:var(--acento);color:#fff;}
+nav.etapas button:hover:not(.activa){border-color:var(--azul-medio);color:var(--azul-medio);}
+
+main{padding:0 var(--e4);}
+.tarjeta{background:var(--superficie);border:1px solid var(--borde);border-radius:var(--radio);
+  box-shadow:var(--sombra);padding:var(--e4);margin-bottom:var(--e4);}
+.tarjeta h2{margin:0 0 4px;font-size:16px;color:var(--azul-profundo);}
+.tarjeta .subt{margin:0 0 var(--e3);color:var(--texto-suave);font-size:12.5px;}
+.fila-acciones{display:flex;gap:var(--e2);flex-wrap:wrap;align-items:center;margin-bottom:var(--e3);}
+
+button.btn{border:none;border-radius:8px;padding:10px 16px;font-weight:600;font-size:13px;
+  transition:var(--transicion);}
+button.btn-primario{background:var(--acento);color:#fff;}
+button.btn-primario:hover{filter:brightness(1.08);}
+button.btn-secundario{background:var(--azul-claro);color:var(--azul-profundo);}
+button.btn-secundario:hover{background:#dbe6f2;}
+button.btn-peligro{background:#fceceb;color:var(--rojo);}
+button.btn-peligro:hover{background:#f8d7d3;}
+button:disabled{opacity:.5;cursor:not-allowed;}
+
+input.buscador,select.filtro{padding:10px 12px;border:1px solid var(--borde);border-radius:8px;}
+input.buscador{min-width:220px;flex:1;}
+
+/* -------- KPIs estilo borde de color -------- */
+.grid-kpi{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:var(--e3);margin-bottom:var(--e4);}
+.kpi{background:var(--superficie);border:1px solid var(--borde);border-left:4px solid var(--azul-medio);
+  border-radius:8px;padding:var(--e3);cursor:pointer;transition:var(--transicion);}
+.kpi:hover{transform:translateY(-1px);box-shadow:var(--sombra);}
+.kpi.activo{box-shadow:0 0 0 2px rgba(214,51,108,.18);}
+.kpi .num{font-size:26px;font-weight:700;color:var(--texto);}
+.kpi .lbl{font-size:12px;color:var(--texto-suave);margin-top:2px;}
+.chip-filtro{display:inline-flex;align-items:center;gap:6px;background:var(--azul-claro);color:var(--azul-profundo);
+  padding:6px 12px;border-radius:999px;font-size:12.5px;font-weight:600;margin-bottom:var(--e3);}
+.chip-filtro span.x{cursor:pointer;font-weight:700;}
+
+/* -------- tabla -------- */
+.contenedor-tabla{overflow-x:auto;}
+table.datos{width:100%;border-collapse:collapse;font-size:12.5px;}
+table.datos th{background:var(--azul-claro);color:var(--azul-profundo);text-align:left;padding:8px 10px;
+  position:sticky;top:0;white-space:nowrap;}
+table.datos td{padding:7px 10px;border-bottom:1px solid var(--borde);white-space:nowrap;}
+table.datos tr:hover td{background:#fafbfc;}
+tr.fila-duplicada td{background:#fdecea!important;}
+tr.fila-seleccionada td{background:#fff3f7!important;}
+.chip{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:700;}
+.chip::before{content:'';width:6px;height:6px;border-radius:50%;background:currentColor;}
+.chip-disponible{background:#e6f4ec;color:var(--verde);}
+.chip-tramite{background:#fdf3e3;color:var(--ambar);}
+.chip-tabla{background:#e8eef8;color:var(--azul-medio);}
+.chip-suspendida{background:#f1e8f7;color:var(--purpura);}
+.chip-desistida{background:#fceceb;color:var(--rojo);}
+.motivos{font-size:11px;color:var(--texto-suave);}
+.puntaje{font-weight:700;color:var(--acento);}
+
+/* -------- staging tabla -------- */
+.barra-staging{position:sticky;bottom:0;background:var(--azul-profundo);color:#fff;padding:var(--e3) var(--e4);
+  display:flex;align-items:center;justify-content:space-between;border-radius:var(--radio) var(--radio) 0 0;
+  box-shadow:0 -4px 16px rgba(0,0,0,.15);}
+.barra-staging b{font-size:14px;}
+
+textarea.paste{width:100%;min-height:140px;padding:var(--e3);border:1px solid var(--borde);border-radius:8px;
+  font-family:'Consolas',monospace;font-size:12.5px;}
+
+.config-nivel{display:flex;align-items:center;gap:var(--e2);margin-bottom:var(--e2);}
+.config-nivel select{padding:8px;border:1px solid var(--borde);border-radius:6px;min-width:220px;}
+.config-nivel .etiqueta{width:120px;font-weight:600;color:var(--texto-suave);font-size:12.5px;}
+
+.aviso{background:#fdf3e3;border:1px solid #f5d999;color:#7a5200;border-radius:8px;padding:var(--e2) var(--e3);
+  font-size:12.5px;margin-bottom:var(--e3);}
+.vacio{color:var(--texto-suave);font-size:13px;padding:var(--e4);text-align:center;}
+</style>
+</head>
+<body>
+
+<!-- ícono institucional compartido (edificio + barras de ranking) -->
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <linearGradient id="gradIcono" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#3E8EDB"/><stop offset="100%" stop-color="#1D4E7E"/>
+    </linearGradient>
+    <linearGradient id="gradIconoAcento" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#39C4D6"/><stop offset="100%" stop-color="#1D8E9E"/>
+    </linearGradient>
+  </defs>
+</svg>
+
+<div id="pantallaAcceso" class="pantalla-oscura">
+  <div class="marca">
+    <svg class="icono" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+      <path d="M50 8 L88 30 H12 Z" fill="url(#gradIcono)"/>
+      <rect x="16" y="34" width="8" height="34" fill="url(#gradIcono)"/>
+      <rect x="34" y="34" width="8" height="34" fill="url(#gradIcono)"/>
+      <rect x="58" y="34" width="8" height="34" fill="url(#gradIcono)"/>
+      <rect x="76" y="34" width="8" height="34" fill="url(#gradIcono)"/>
+      <rect x="10" y="70" width="80" height="7" rx="1.5" fill="url(#gradIcono)"/>
+      <circle cx="70" cy="72" r="22" fill="url(#gradIconoAcento)"/>
+      <rect x="60" y="75" width="6" height="10" rx="1.5" fill="#fff"/>
+      <rect x="69" y="68" width="6" height="17" rx="1.5" fill="#fff"/>
+      <rect x="78" y="62" width="6" height="23" rx="1.5" fill="#fff"/>
+    </svg>
+    <h1>Stock de Causas y Ranking</h1>
+    <p>Control de ingreso a tabla · Priorización automática</p>
+  </div>
+  <div class="caja-login">
+    <label for="inputClave">Clave de acceso</label>
+    <input type="password" id="inputClave" placeholder="Ingresa la clave" autocomplete="off">
+    <button id="btnEntrar">Entrar</button>
+    <div class="error-login" id="errorLogin"></div>
+  </div>
+</div>
+
+<div id="pantallaBienvenida" class="pantalla-oscura oculto">
+  <div class="marca">
+    <svg class="icono" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+      <path d="M50 8 L88 30 H12 Z" fill="url(#gradIcono)"/>
+      <rect x="16" y="34" width="8" height="34" fill="url(#gradIcono)"/>
+      <rect x="34" y="34" width="8" height="34" fill="url(#gradIcono)"/>
+      <rect x="58" y="34" width="8" height="34" fill="url(#gradIcono)"/>
+      <rect x="76" y="34" width="8" height="34" fill="url(#gradIcono)"/>
+      <rect x="10" y="70" width="80" height="7" rx="1.5" fill="url(#gradIcono)"/>
+      <circle cx="70" cy="72" r="22" fill="url(#gradIconoAcento)"/>
+      <rect x="60" y="75" width="6" height="10" rx="1.5" fill="#fff"/>
+      <rect x="69" y="68" width="6" height="17" rx="1.5" fill="#fff"/>
+      <rect x="78" y="62" width="6" height="23" rx="1.5" fill="#fff"/>
+    </svg>
+    <h1>Stock de Causas y Ranking</h1>
+    <p>Control de ingreso a tabla · Priorización automática</p>
+  </div>
+  <div class="grid-bienvenida" id="tarjetasBienvenida"></div>
+  <p class="pie-bienvenida">Poder Judicial · Corte de Apelaciones · 2026</p>
+</div>
+
+<div id="app" class="oculto">
+  <header class="top">
+    <div class="marca-top">
+      <svg viewBox="0 0 100 100"><path d="M50 8 L88 30 H12 Z" fill="url(#gradIcono)"/>
+        <rect x="16" y="34" width="8" height="34" fill="url(#gradIcono)"/>
+        <rect x="34" y="34" width="8" height="34" fill="url(#gradIcono)"/>
+        <rect x="58" y="34" width="8" height="34" fill="url(#gradIcono)"/>
+        <rect x="76" y="34" width="8" height="34" fill="url(#gradIcono)"/>
+        <rect x="10" y="70" width="80" height="7" rx="1.5" fill="url(#gradIcono)"/>
+        <circle cx="70" cy="72" r="22" fill="url(#gradIconoAcento)"/>
+        <rect x="60" y="75" width="6" height="10" rx="1.5" fill="#fff"/>
+        <rect x="69" y="68" width="6" height="17" rx="1.5" fill="#fff"/>
+        <rect x="78" y="62" width="6" height="23" rx="1.5" fill="#fff"/>
+      </svg>
+      <div>
+        <h1>Stock de Causas y Ranking</h1>
+        <p id="resumenHeader">Cargando...</p>
+      </div>
+    </div>
+    <div class="acciones-header">
+      <span class="estado-servicio"><span class="punto"></span><span id="horaActualizado">—</span></span>
+      <button class="btn-header" id="btnActualizarTodo">↻ Actualizar</button>
+      <button class="btn-header" id="btnAbrirConfig">⚙ Configuración</button>
+    </div>
+  </header>
+
+  <nav class="etapas">
+    <button data-vista="ingesta" class="activa"><span class="badge">1</span> Ingreso</button>
+    <button data-vista="ranking"><span class="badge">2</span> Ranking</button>
+    <button data-vista="stock"><span class="badge">3</span> Stock de causas</button>
+    <button data-vista="inicio"><span class="badge">4</span> Reportabilidad</button>
+    <button data-vista="config"><span class="badge">5</span> Configuración</button>
+  </nav>
+
+  <main>
+
+    <!-- ===== 1. INGRESO ===== -->
+    <section id="vista-ingesta" class="oculto">
+      <div class="tarjeta">
+        <h2>Ingresar causas nuevas</h2>
+        <p class="subt">Pega filas copiadas desde Excel (separadas por tabulación), con columnas en este orden:
+        <b>ROL · AÑO · LIBRO · FECHA INGRESO · OBSERVACION · FECHA RELACIÓN</b>. Solo se agregan las que no existan ya (por ROL+AÑO+LIBRO).</p>
+        <textarea class="paste" id="pasteIngesta" placeholder="703&#9;2024&#9;Civil&#9;03-05-2024&#9;Civil-casación y apelación&#9;27-05-2024"></textarea>
+        <div class="fila-acciones" style="margin-top:var(--e3)">
+          <button class="btn btn-primario" id="btnIngestar">Ingresar solo causas nuevas</button>
+        </div>
+        <div id="resultadoIngesta"></div>
+      </div>
+      <div class="tarjeta">
+        <h2>Actualizar listado "Stock" (para cruce de materia)</h2>
+        <p class="subt">Pega el listado de referencia con columnas: <b>ROL · AÑO · LIBRO · MATERIA</b>. Actualiza la materia de las que ya existen en Stock y agrega las que falten — no borra nada.</p>
+        <textarea class="paste" id="pasteStock" placeholder="166&#9;2022&#9;Civil&#9;Pesca y acuicultura,infracciones a la Ley de"></textarea>
+        <div class="fila-acciones" style="margin-top:var(--e3)">
+          <button class="btn btn-secundario" id="btnCargarStock">Actualizar listado Stock</button>
+        </div>
+        <div id="resultadoStock"></div>
+      </div>
+    </section>
+
+    <!-- ===== 2. RANKING ===== -->
+    <section id="vista-ranking" class="oculto">
+      <div class="tarjeta">
+        <h2>Ranking de causas disponibles</h2>
+        <p class="subt">Prioridad: RIJA · Pesca y Acuicultura · Suspensión vencida · Libro (según Configuración) · Fecha Relación más antigua.</p>
+        <div class="fila-acciones">
+          <button class="btn btn-primario" id="btnGenerarRanking">🔄 Generar ranking</button>
+          <span id="infoRanking" style="color:var(--texto-suave);font-size:12.5px;"></span>
+        </div>
+        <div class="contenedor-tabla">
+          <table class="datos" id="tablaRanking">
+            <thead><tr><th></th><th>#</th><th>ROL</th><th>AÑO</th><th>LIBRO</th><th>MATERIA</th><th>PUNTAJE</th><th>MOTIVO</th><th>FECHA RELACIÓN</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 3. STOCK ===== -->
+    <section id="vista-stock" class="oculto">
+      <div class="tarjeta">
+        <h2>Stock completo de causas</h2>
+        <div class="fila-acciones">
+          <input class="buscador" id="buscadorStock" placeholder="Buscar por ROL, AÑO, LIBRO, MATERIA...">
+          <select class="filtro" id="filtroEstadoStock">
+            <option value="">Todos los estados</option>
+            <option>Disponible</option><option>En Trámite</option><option>En Tabla</option>
+            <option>Suspendida Procedimiento</option><option>Desistida</option>
+          </select>
+          <button class="btn btn-secundario" id="btnDuplicados">🔴 Ver duplicados</button>
+          <button class="btn btn-secundario" id="btnActualizarMaterias">🔗 Actualizar materias desde Stock</button>
+          <button class="btn btn-secundario" id="btnLimpiarFiltrosStock">Limpiar</button>
+        </div>
+        <div class="contenedor-tabla">
+          <table class="datos" id="tablaStock">
+            <thead><tr><th></th><th>ROL</th><th>AÑO</th><th>LIBRO</th><th>MATERIA</th><th>TIPO</th><th>ESTADO</th><th>FECHA INGRESO</th><th>FECHA RELACIÓN</th><th></th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 4. REPORTABILIDAD ===== -->
+    <section id="vista-inicio" class="oculto">
+      <div class="tarjeta">
+        <h2>Resumen general</h2>
+        <div class="grid-kpi" id="kpisEstado"></div>
+        <div id="chipFiltroReportes"></div>
+        <div class="contenedor-tabla">
+          <table class="datos" id="tablaReportes">
+            <thead><tr><th>ROL</th><th>AÑO</th><th>LIBRO</th><th>MATERIA</th><th>TIPO</th><th>ESTADO</th><th>FECHA RELACIÓN</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="tarjeta">
+        <h2>Pendientes por materia</h2>
+        <div class="contenedor-tabla"><table class="datos" id="tablaMateria"><thead><tr><th>Materia</th><th>Pendientes</th></tr></thead><tbody></tbody></table></div>
+      </div>
+      <div class="tarjeta">
+        <h2>Pendientes por tipo</h2>
+        <div class="contenedor-tabla"><table class="datos" id="tablaTipo"><thead><tr><th>Tipo</th><th>Pendientes</th></tr></thead><tbody></tbody></table></div>
+      </div>
+    </section>
+
+    <!-- ===== 5. CONFIG ===== -->
+    <section id="vista-config" class="oculto">
+      <div class="tarjeta">
+        <h2>Prioridad de LIBRO para el ranking</h2>
+        <p class="subt">Define qué libro pesa más al calcular el ranking. El nivel 1 suma más puntos que el nivel 2, y así sucesivamente.</p>
+        <div id="nivelesConfig"></div>
+        <div class="fila-acciones" style="margin-top:var(--e3)">
+          <button class="btn btn-primario" id="btnGuardarConfig">Guardar configuración</button>
+        </div>
+      </div>
+      <div class="tarjeta">
+        <h2>Conexión al servicio</h2>
+        <div class="fila-acciones">
+          <input class="buscador" id="inputUrlServicio" placeholder="URL de Apps Script (…/exec)">
+          <button class="btn btn-secundario" id="btnGuardarServicio">Guardar</button>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- barra flotante de selección para armar tabla -->
+  <div class="barra-staging oculto" id="barraStaging">
+    <b><span id="contadorStaging">0</span> causa(s) seleccionada(s) para tabla</b>
+    <div>
+      <button class="btn btn-secundario" id="btnLimpiarStaging" style="margin-right:8px;">Limpiar</button>
+      <button class="btn btn-primario" id="btnPrepararTabla">Preparar tabla →</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  var LIBROS_DISPONIBLES = ['Laboral - Cobranza','Familia','Civil','Tributario Y Aduanero','Policia Local','Contencioso Administrativo','Penal','(Ninguno)'];
+
+  var ETAPAS = [
+    { vista:'ingesta', numero:1, titulo:'Ingreso', desc:'Cargar causas nuevas y actualizar el listado de referencia (Stock) para la materia.' },
+    { vista:'ranking', numero:2, titulo:'Ranking', desc:'Calcular la prioridad de las causas disponibles según los criterios definidos.' },
+    { vista:'stock', numero:3, titulo:'Stock de causas', desc:'Ver el listado completo, filtrar por estado y resolver duplicados.' },
+    { vista:'inicio', numero:4, titulo:'Reportabilidad', desc:'Pendientes y gestionadas, desglosadas por materia y por tipo.' },
+    { vista:'config', numero:5, titulo:'Configuración', desc:'Definir la prioridad de LIBRO y la conexión al servicio de datos.' }
+  ];
+
+  var almacen = {
+    urlServicio: localStorage.getItem('stockCausas.urlServicio') || '',
+    clave: sessionStorage.getItem('stockCausas.clave') || ''
+  };
+
+  var estado = {
+    causas: [], config: [], ranking: [],
+    filtroReportes: null,
+    seleccionStaging: {} // idFila -> objeto causa resumido
+  };
+
+  /* ---------------- comunicación con backend ---------------- */
+  function hayServicio(){ return !!almacen.urlServicio; }
+
+  function llamarServicio(cuerpo){
+    if(!hayServicio()) return Promise.reject(new Error('Configura la URL del servicio en "Configuración".'));
+    cuerpo.clave = almacen.clave;
+    return fetch(almacen.urlServicio, {
+      method:'POST',
+      headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body: JSON.stringify(cuerpo),
+      redirect:'follow'
+    }).then(function(r){
+      if(!r.ok) throw new Error('El servicio respondió '+r.status+'.');
+      return r.json();
+    }).then(function(datos){
+      if(!datos || datos.ok !== true) throw new Error((datos && datos.error) || 'Respuesta inesperada del servicio.');
+      return datos;
+    });
+  }
+
+  /* ---------------- login ---------------- */
+  var pantallaAcceso = document.getElementById('pantallaAcceso');
+  var pantallaBienvenida = document.getElementById('pantallaBienvenida');
+  var app = document.getElementById('app');
+
+  document.getElementById('btnEntrar').addEventListener('click', intentarEntrar);
+  document.getElementById('inputClave').addEventListener('keydown', function(e){ if(e.key==='Enter') intentarEntrar(); });
+
+  function intentarEntrar(){
+    var clave = document.getElementById('inputClave').value.trim();
+    if(!clave){ mostrarErrorLogin('Ingresa la clave.'); return; }
+    almacen.clave = clave;
+    sessionStorage.setItem('stockCausas.clave', clave);
+    document.getElementById('inputUrlServicio').value = almacen.urlServicio;
+    mostrarBienvenida();
+  }
+
+  function mostrarErrorLogin(msj){ document.getElementById('errorLogin').textContent = msj; }
+
+  function mostrarBienvenida(){
+    pantallaAcceso.classList.add('oculto');
+    var cont = document.getElementById('tarjetasBienvenida');
+    cont.innerHTML = ETAPAS.map(function(e, i){
+      return '<div class="tarjeta-bienvenida" data-vista="'+e.vista+'" style="animation-delay:'+(i*80)+'ms">'+
+        '<div class="num">'+e.numero+'</div><h3>'+e.titulo+'</h3><p>'+e.desc+'</p></div>';
+    }).join('');
+    cont.querySelectorAll('.tarjeta-bienvenida').forEach(function(t){
+      t.addEventListener('click', function(){ entrarApp(t.dataset.vista); });
+    });
+    pantallaBienvenida.classList.remove('oculto');
+  }
+
+  function entrarApp(vistaInicial){
+    pantallaBienvenida.classList.add('oculto');
+    app.classList.remove('oculto');
+    if(vistaInicial) irAVista(vistaInicial);
+    cargarTodo();
+  }
+
+  // configuración vía hash: #s=URL&k=CLAVE
+  (function leerHash(){
+    if(location.hash.length < 2) return;
+    var params = new URLSearchParams(location.hash.substring(1));
+    if(params.get('s')){ almacen.urlServicio = params.get('s'); localStorage.setItem('stockCausas.urlServicio', almacen.urlServicio); }
+    if(params.get('k')){ almacen.clave = params.get('k'); sessionStorage.setItem('stockCausas.clave', almacen.clave); }
+    if(params.get('s') || params.get('k')) history.replaceState(null,'',location.pathname);
+  })();
+
+  if(almacen.clave){ document.getElementById('inputClave').value = almacen.clave; }
+
+  /* ---------------- navegación por etapas ---------------- */
+  function irAVista(vista){
+    document.querySelectorAll('nav.etapas button').forEach(function(b){ b.classList.toggle('activa', b.dataset.vista===vista); });
+    document.querySelectorAll('main > section').forEach(function(s){ s.classList.add('oculto'); });
+    document.getElementById('vista-'+vista).classList.remove('oculto');
+  }
+  document.querySelectorAll('nav.etapas button').forEach(function(btn){
+    btn.addEventListener('click', function(){ irAVista(btn.dataset.vista); });
+  });
+  document.getElementById('btnAbrirConfig').addEventListener('click', function(){ irAVista('config'); });
+  document.getElementById('btnActualizarTodo').addEventListener('click', cargarTodo);
+
+  /* ---------------- carga inicial ---------------- */
+  function cargarTodo(){
+    llamarServicio({accion:'listar'}).then(function(datos){
+      estado.causas = datos.causas;
+      estado.config = datos.config;
+      actualizarResumenHeader();
+      renderReportesLocal();
+      renderStock();
+      renderConfig();
+    }).catch(mostrarErrorGlobal);
+  }
+
+  function actualizarResumenHeader(){
+    var total = estado.causas.length;
+    var disponibles = estado.causas.filter(function(c){return c.estado==='Disponible';}).length;
+    document.getElementById('resumenHeader').textContent =
+      total + ' causas en stock · ' + disponibles + ' disponibles para ranking';
+    document.getElementById('horaActualizado').textContent =
+      'Actualizado ' + new Date().toLocaleTimeString('es-CL',{hour:'2-digit',minute:'2-digit'});
+  }
+
+  function mostrarErrorGlobal(err){
+    console.error(err);
+    document.getElementById('resumenHeader').textContent = 'Error: '+err.message;
+  }
+
+  /* ---------------- helpers de formato ---------------- */
+  function chipEstado(estadoTxt){
+    var map = {
+      'Disponible':'chip-disponible','En Trámite':'chip-tramite','En Tabla':'chip-tabla',
+      'Suspendida Procedimiento':'chip-suspendida','Desistida':'chip-desistida'
+    };
+    var clase = map[estadoTxt] || 'chip-tramite';
+    return '<span class="chip '+clase+'">'+(estadoTxt||'—')+'</span>';
+  }
+
+  function claveDup(c){ return String(c.rol)+'|'+String(c.anio)+'|'+String(c.libro||'').trim().toUpperCase(); }
+
+  function calcularDuplicados(causas){
+    var grupos = {};
+    causas.forEach(function(c){ var k=claveDup(c); (grupos[k]=grupos[k]||[]).push(c); });
+    var setDup = {};
+    Object.keys(grupos).forEach(function(k){ if(grupos[k].length>1) grupos[k].forEach(function(c){ setDup[c.idFila]=true; }); });
+    return setDup;
+  }
+
+  /* ================= REPORTABILIDAD ================= */
+  var COLOR_KPI = {
+    'Disponible':'var(--verde)','En Trámite':'var(--ambar)','En Tabla':'var(--azul-medio)',
+    'Suspendida Procedimiento':'var(--purpura)','Desistida':'var(--rojo)'
+  };
+
+  function renderReportesLocal(){
+    var causas = estado.causas;
+    var porEstado = {};
+    causas.forEach(function(c){ var e=c.estado||'Sin estado'; porEstado[e]=(porEstado[e]||0)+1; });
+
+    var kpis = document.getElementById('kpisEstado');
+    kpis.innerHTML = '';
+
+    var total = document.createElement('div');
+    total.className = 'kpi'+(estado.filtroReportes===null?' activo':'');
+    total.style.borderLeftColor = 'var(--azul-profundo)';
+    total.innerHTML = '<div class="num">'+causas.length+'</div><div class="lbl">Total en stock</div>';
+    total.addEventListener('click', function(){ estado.filtroReportes=null; renderReportesLocal(); });
+    kpis.appendChild(total);
+
+    var orden = ['Disponible','En Trámite','En Tabla','Suspendida Procedimiento','Desistida'];
+    orden.forEach(function(e){
+      var div = document.createElement('div');
+      div.className = 'kpi'+(estado.filtroReportes===e?' activo':'');
+      div.style.borderLeftColor = COLOR_KPI[e];
+      div.innerHTML = '<div class="num">'+(porEstado[e]||0)+'</div><div class="lbl">'+e+'</div>';
+      div.addEventListener('click', function(){
+        estado.filtroReportes = (estado.filtroReportes===e) ? null : e;
+        renderReportesLocal();
+      });
+      kpis.appendChild(div);
+    });
+
+    var chipCont = document.getElementById('chipFiltroReportes');
+    chipCont.innerHTML = '';
+    if(estado.filtroReportes){
+      var chip = document.createElement('div');
+      chip.className='chip-filtro';
+      chip.innerHTML = 'Filtrando por: '+estado.filtroReportes+' <span class="x">×</span>';
+      chip.querySelector('.x').addEventListener('click', function(){ estado.filtroReportes=null; renderReportesLocal(); });
+      chipCont.appendChild(chip);
+    }
+
+    var filtradas = estado.filtroReportes ? causas.filter(function(c){return c.estado===estado.filtroReportes;}) : causas;
+    var tbody = document.querySelector('#tablaReportes tbody');
+    tbody.innerHTML = filtradas.slice(0,300).map(function(c){
+      return '<tr><td>'+(c.rol||'')+'</td><td>'+(c.anio||'')+'</td><td>'+(c.libro||'')+'</td><td>'+(c.materia||'')+'</td>'+
+        '<td>'+(c.tipo||'')+'</td><td>'+chipEstado(c.estado)+'</td><td>'+(c.fechaRelacion||'')+'</td></tr>';
+    }).join('') || '<tr><td colspan="7" class="vacio">Sin resultados</td></tr>';
+
+    var pendientesEstados = {'Disponible':1,'En Trámite':1,'Suspendida Procedimiento':1};
+    var porMateria={}, porTipo={};
+    causas.forEach(function(c){
+      if(pendientesEstados[c.estado]){
+        var m=c.materia||'Sin materia', t=c.tipo||'Sin tipo';
+        porMateria[m]=(porMateria[m]||0)+1; porTipo[t]=(porTipo[t]||0)+1;
+      }
+    });
+    function pintarConteo(id, obj){
+      var filas = Object.keys(obj).sort(function(a,b){return obj[b]-obj[a];})
+        .map(function(k){return '<tr><td>'+k+'</td><td>'+obj[k]+'</td></tr>';}).join('');
+      document.querySelector('#'+id+' tbody').innerHTML = filas || '<tr><td colspan="2" class="vacio">Sin datos</td></tr>';
+    }
+    pintarConteo('tablaMateria', porMateria);
+    pintarConteo('tablaTipo', porTipo);
+  }
+
+  /* ================= RANKING ================= */
+  document.getElementById('btnGenerarRanking').addEventListener('click', function(){
+    var btn = this; btn.disabled = true; btn.textContent = 'Calculando...';
+    llamarServicio({accion:'generarRanking'}).then(function(datos){
+      estado.ranking = datos.ranking;
+      document.getElementById('infoRanking').textContent =
+        'Disponibles: '+datos.disponibles+' · En ranking: '+datos.enRanking+
+        ' · RIJA: '+datos.conRIJA+' · Pesca: '+datos.conPesca+' · Susp. vencida: '+datos.conSuspensionVencida;
+      renderRanking();
+    }).catch(mostrarErrorGlobal).finally(function(){ btn.disabled=false; btn.textContent='🔄 Generar ranking'; });
+  });
+
+  function renderRanking(){
+    var tbody = document.querySelector('#tablaRanking tbody');
+    tbody.innerHTML = estado.ranking.map(function(c, i){
+      var marcada = !!estado.seleccionStaging[c.idFila];
+      return '<tr class="'+(marcada?'fila-seleccionada':'')+'">'+
+        '<td><input type="checkbox" data-id="'+c.idFila+'" class="chkRanking" '+(marcada?'checked':'')+'></td>'+
+        '<td>'+(i+1)+'</td><td>'+(c.rol||'')+'</td><td>'+(c.anio||'')+'</td><td>'+(c.libro||'')+'</td><td>'+(c.materia||'')+'</td>'+
+        '<td class="puntaje">'+c.puntaje+'</td><td class="motivos">'+(c.motivos||[]).join(' · ')+'</td>'+
+        '<td>'+(c.fechaRelacion||'')+'</td></tr>';
+    }).join('') || '<tr><td colspan="9" class="vacio">Presiona "Generar ranking" para calcular</td></tr>';
+
+    tbody.querySelectorAll('.chkRanking').forEach(function(chk){
+      chk.addEventListener('change', function(){
+        var causa = estado.ranking.find(function(c){return c.idFila===chk.dataset.id;});
+        toggleStaging(causa, chk.checked);
+        renderRanking();
+      });
+    });
+  }
+
+  /* ================= STOCK ================= */
+  function causasFiltradas(){
+    var texto = (document.getElementById('buscadorStock').value||'').toLowerCase();
+    var filtroEstado = document.getElementById('filtroEstadoStock').value;
+    return estado.causas.filter(function(c){
+      if(filtroEstado && c.estado!==filtroEstado) return false;
+      if(!texto) return true;
+      var pack = [c.rol,c.anio,c.libro,c.materia,c.tipo].join(' ').toLowerCase();
+      return pack.indexOf(texto) > -1;
+    });
+  }
+
+  var soloDuplicados = false;
+
+  function renderStock(){
+    var lista = causasFiltradas();
+    var duplicados = calcularDuplicados(estado.causas);
+    if(soloDuplicados) lista = lista.filter(function(c){return duplicados[c.idFila];});
+
+    var tbody = document.querySelector('#tablaStock tbody');
+    tbody.innerHTML = lista.slice(0,500).map(function(c){
+      var esDup = !!duplicados[c.idFila];
+      var marcada = !!estado.seleccionStaging[c.idFila];
+      return '<tr class="'+(esDup?'fila-duplicada ':'')+(marcada?'fila-seleccionada':'')+'">'+
+        '<td><input type="checkbox" data-id="'+c.idFila+'" class="chkStock" '+(marcada?'checked':'')+'></td>'+
+        '<td>'+(c.rol||'')+'</td><td>'+(c.anio||'')+'</td><td>'+(c.libro||'')+'</td><td>'+(c.materia||'')+'</td>'+
+        '<td>'+(c.tipo||'')+'</td><td>'+chipEstado(c.estado)+'</td><td>'+(c.fechaIngreso||'')+'</td><td>'+(c.fechaRelacion||'')+'</td>'+
+        '<td>'+(esDup?'<button class="btn btn-peligro btnEliminarDup" data-id="'+c.idFila+'">Eliminar</button>':'')+'</td></tr>';
+    }).join('') || '<tr><td colspan="10" class="vacio">Sin resultados</td></tr>';
+
+    tbody.querySelectorAll('.chkStock').forEach(function(chk){
+      chk.addEventListener('change', function(){
+        var causa = estado.causas.find(function(c){return c.idFila===chk.dataset.id;});
+        toggleStaging(causa, chk.checked);
+        renderStock();
+      });
+    });
+    tbody.querySelectorAll('.btnEliminarDup').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        if(!confirm('¿Eliminar esta causa duplicada? No se puede deshacer.')) return;
+        llamarServicio({accion:'eliminarFila', idFila: btn.dataset.id}).then(function(){
+          return llamarServicio({accion:'listar'});
+        }).then(function(datos){
+          estado.causas = datos.causas;
+          actualizarResumenHeader(); renderStock(); renderReportesLocal();
+        }).catch(mostrarErrorGlobal);
+      });
+    });
+  }
+
+  document.getElementById('buscadorStock').addEventListener('input', renderStock);
+  document.getElementById('filtroEstadoStock').addEventListener('change', renderStock);
+  document.getElementById('btnLimpiarFiltrosStock').addEventListener('click', function(){
+    document.getElementById('buscadorStock').value='';
+    document.getElementById('filtroEstadoStock').value='';
+    soloDuplicados=false;
+    document.getElementById('btnDuplicados').textContent='🔴 Ver duplicados';
+    renderStock();
+  });
+  document.getElementById('btnDuplicados').addEventListener('click', function(){
+    soloDuplicados = !soloDuplicados;
+    this.textContent = soloDuplicados ? '✖ Quitar filtro duplicados' : '🔴 Ver duplicados';
+    renderStock();
+  });
+  document.getElementById('btnActualizarMaterias').addEventListener('click', function(){
+    var btn=this; btn.disabled=true;
+    llamarServicio({accion:'actualizarMaterias'}).then(function(datos){
+      alert('Materias actualizadas: '+datos.actualizadas);
+      return llamarServicio({accion:'listar'});
+    }).then(function(datos){ estado.causas=datos.causas; renderStock(); renderReportesLocal(); })
+    .catch(mostrarErrorGlobal).finally(function(){ btn.disabled=false; });
+  });
+
+  /* ================= STAGING (preparar tabla) ================= */
+  function toggleStaging(causa, on){
+    if(!causa) return;
+    if(on) estado.seleccionStaging[causa.idFila] = causa;
+    else delete estado.seleccionStaging[causa.idFila];
+    renderBarraStaging();
+  }
+
+  function renderBarraStaging(){
+    var n = Object.keys(estado.seleccionStaging).length;
+    document.getElementById('contadorStaging').textContent = n;
+    document.getElementById('barraStaging').classList.toggle('oculto', n===0);
+  }
+
+  document.getElementById('btnLimpiarStaging').addEventListener('click', function(){
+    estado.seleccionStaging = {};
+    renderBarraStaging(); renderRanking(); renderStock();
+  });
+
+  document.getElementById('btnPrepararTabla').addEventListener('click', function(){
+    var ids = Object.keys(estado.seleccionStaging);
+    if(ids.length===0) return;
+    var listado = ids.map(function(id){ var c=estado.seleccionStaging[id]; return (c.rol||'')+' - '+(c.libro||'')+' ('+(c.anio||'')+')'; }).join('\n');
+    if(!confirm('Se marcarán como "En Tabla" '+ids.length+' causa(s):\n\n'+listado+'\n\n¿Confirmar y guardar?')) return;
+    llamarServicio({accion:'confirmarTabla', idsFila: ids}).then(function(datos){
+      alert('Actualizadas '+datos.actualizadas+' causa(s) a estado "En Tabla".');
+      estado.seleccionStaging = {};
+      renderBarraStaging();
+      return llamarServicio({accion:'listar'});
+    }).then(function(datos){
+      estado.causas = datos.causas;
+      actualizarResumenHeader(); renderReportesLocal(); renderStock(); renderRanking();
+    }).catch(mostrarErrorGlobal);
+  });
+
+  /* ================= INGESTA ================= */
+  function parsearPegado(texto){
+    return texto.split('\n').map(function(l){return l.trim();}).filter(Boolean)
+      .map(function(l){return l.split('\t');});
+  }
+
+  document.getElementById('btnIngestar').addEventListener('click', function(){
+    var filas = parsearPegado(document.getElementById('pasteIngesta').value);
+    if(filas.length===0){ document.getElementById('resultadoIngesta').innerHTML='<p class="aviso">Pega al menos una fila.</p>'; return; }
+    var objetos = filas.map(function(f){
+      return { rol:f[0]||'', anio:f[1]||'', libro:f[2]||'', fechaIngreso:f[3]||'', observacion:f[4]||'', fechaRelacion:f[5]||'' };
+    });
+    llamarServicio({accion:'ingestarNuevas', filas: objetos}).then(function(datos){
+      document.getElementById('resultadoIngesta').innerHTML =
+        '<p class="aviso">Agregadas: <b>'+datos.agregadas+'</b> · Omitidas (ya existían): <b>'+datos.omitidas+'</b></p>';
+      document.getElementById('pasteIngesta').value='';
+      return llamarServicio({accion:'listar'});
+    }).then(function(datos){ estado.causas=datos.causas; actualizarResumenHeader(); renderStock(); renderReportesLocal(); })
+    .catch(mostrarErrorGlobal);
+  });
+
+  document.getElementById('btnCargarStock').addEventListener('click', function(){
+    var filas = parsearPegado(document.getElementById('pasteStock').value);
+    var objetos = filas.map(function(f){ return { rol:f[0]||'', anio:f[1]||'', libro:f[2]||'', materia:f[3]||'' }; });
+    if(!confirm('Se van a actualizar/agregar '+objetos.length+' fila(s) en el listado Stock. ¿Continuar?')) return;
+    llamarServicio({accion:'cargarStock', filas: objetos}).then(function(datos){
+      document.getElementById('resultadoStock').innerHTML = '<p class="aviso">Actualizadas: <b>'+datos.actualizadas+'</b> · Agregadas: <b>'+datos.agregadas+'</b>.</p>';
+      document.getElementById('pasteStock').value='';
+    }).catch(mostrarErrorGlobal);
+  });
+
+  /* ================= CONFIG ================= */
+  function renderConfig(){
+    var cont = document.getElementById('nivelesConfig');
+    cont.innerHTML='';
+    var niveles = estado.config.length ? estado.config : [1,2,3,4,5].map(function(n,i){return {nivel:n,libro:'(Ninguno)',puntaje:[300,200,100,50,25][i]};});
+    niveles.forEach(function(n){
+      var div = document.createElement('div');
+      div.className='config-nivel';
+      var opciones = LIBROS_DISPONIBLES.map(function(l){
+        return '<option value="'+l+'" '+(l===n.libro?'selected':'')+'>'+l+'</option>';
+      }).join('');
+      div.innerHTML = '<span class="etiqueta">Nivel '+n.nivel+' (+'+n.puntaje+' pts)</span><select data-nivel="'+n.nivel+'" data-puntaje="'+n.puntaje+'">'+opciones+'</select>';
+      cont.appendChild(div);
+    });
+    document.getElementById('inputUrlServicio').value = almacen.urlServicio;
+  }
+
+  document.getElementById('btnGuardarConfig').addEventListener('click', function(){
+    var prioridad = Array.prototype.map.call(document.querySelectorAll('#nivelesConfig select'), function(sel){
+      return { nivel: Number(sel.dataset.nivel), libro: sel.value, puntaje: Number(sel.dataset.puntaje) };
+    });
+    llamarServicio({accion:'guardarConfig', prioridad: prioridad}).then(function(){
+      alert('Configuración guardada.');
+    }).catch(mostrarErrorGlobal);
+  });
+
+  document.getElementById('btnGuardarServicio').addEventListener('click', function(){
+    almacen.urlServicio = document.getElementById('inputUrlServicio').value.trim();
+    localStorage.setItem('stockCausas.urlServicio', almacen.urlServicio);
+    alert('URL de servicio guardada. Recargando datos...');
+    cargarTodo();
+  });
+
+})();
+</script>
+</body>
+</html>
