@@ -53,7 +53,9 @@ function procesar(datos) {
     }
     switch (datos.accion) {
       case 'probar':
-        return { ok: true, mensaje: 'Servicio operativo' };
+        return { ok: true, mensaje: 'Servicio operativo', version: 'v4-diagnostico-2026-09-08' };
+      case 'diagnostico':
+        return diagnostico(datos);
       case 'listar':
         return listarTodo();
       case 'ingestarNuevas':
@@ -97,10 +99,16 @@ function normalizar(texto) {
 
 /** Busca el índice (0-based) de la primera columna cuyo encabezado normalizado
  *  contiene el texto buscado (también normalizado). */
+/** Busca por coincidencia EXACTA primero (evita que "MATERIA" confunda con
+ *  "COD MATERIA", que también la contiene como substring); si no hay
+ *  coincidencia exacta, recién ahí cae a substring. */
 function buscarColumna(headers, buscado) {
   var obj = normalizar(buscado);
   for (var i = 0; i < headers.length; i++) {
-    if (normalizar(headers[i]).indexOf(obj) > -1) return i;
+    if (normalizar(headers[i]) === obj) return i;
+  }
+  for (var j = 0; j < headers.length; j++) {
+    if (normalizar(headers[j]).indexOf(obj) > -1) return j;
   }
   return -1;
 }
@@ -219,6 +227,61 @@ function leerStock() {
     });
   }
   return out;
+}
+
+/** Diagnóstico temporal: muestra los encabezados reales y 2 filas de ejemplo
+ *  (TODAS las columnas, no solo las mapeadas) de Base_Datos y Stock, para
+ *  detectar por qué MATERIA muestra códigos en vez de texto descriptivo.
+ *  Si se envía rol/anio/libro, además busca esa fila EXACTA en Stock (con
+ *  todas sus columnas) para comparar "COD MATERIA" contra "MATERIA".
+ *  Quitar esta acción una vez resuelto el problema. */
+function diagnostico(datos) {
+  var hb = hojaBase();
+  var ultimaColB = hb.getLastColumn();
+  var headersBase = hb.getRange(FILA_ENCABEZADO_BASE, 1, 1, ultimaColB).getValues()[0];
+  var muestraBase = hb.getLastRow() >= FILA_ENCABEZADO_BASE + 2
+    ? hb.getRange(FILA_ENCABEZADO_BASE + 1, 1, 2, ultimaColB).getValues()
+    : [];
+
+  var hs = hojaStock();
+  var ultimaColS = hs.getLastColumn();
+  var headersStock = hs.getRange(FILA_ENCABEZADO_STOCK, 1, 1, ultimaColS).getValues()[0];
+  var colStock = mapaColumnasStock(headersStock);
+  var muestraStock = hs.getLastRow() >= FILA_ENCABEZADO_STOCK + 2
+    ? hs.getRange(FILA_ENCABEZADO_STOCK + 1, 1, 2, ultimaColS).getValues()
+    : [];
+
+  var busqueda = null;
+  if (datos && datos.rol) {
+    var claveBuscada = claveCruce(datos.rol, datos.anio, datos.libro);
+    busqueda = { clave: claveBuscada, encontradaEnStock: false, encontradaEnBase: false };
+    var ultimaFilaS = hs.getLastRow();
+    if (ultimaFilaS >= FILA_ENCABEZADO_STOCK + 1) {
+      var todasStock = hs.getRange(FILA_ENCABEZADO_STOCK + 1, 1, ultimaFilaS - FILA_ENCABEZADO_STOCK, ultimaColS).getValues();
+      for (var i = 0; i < todasStock.length; i++) {
+        var f = todasStock[i];
+        if (claveCruce(f[colStock.rol], f[colStock.anio], f[colStock.libro]) === claveBuscada) {
+          busqueda.encontradaEnStock = true;
+          busqueda.filaStock = FILA_ENCABEZADO_STOCK + 1 + i;
+          busqueda.valoresStock = f.map(formatearValor);
+          busqueda.materiaSegunColMapeada = colStock.materia > -1 ? formatearValor(f[colStock.materia]) : null;
+          break;
+        }
+      }
+    }
+    var causaBase = leerCausas().filter(function(c) { return claveCruce(c.rol, c.anio, c.libro) === claveBuscada; })[0];
+    if (causaBase) {
+      busqueda.encontradaEnBase = true;
+      busqueda.materiaEnBaseDatos = causaBase.materia;
+    }
+  }
+
+  return {
+    ok: true,
+    baseDatos: { headers: headersBase, colMapeada: mapaColumnasBase(headersBase), muestra: muestraBase.map(function(f){ return f.map(formatearValor); }) },
+    stock: { headers: headersStock, colMapeada: colStock, muestra: muestraStock.map(function(f){ return f.map(formatearValor); }) },
+    busqueda: busqueda
+  };
 }
 
 function claveCruce(rol, anio, libro) {
@@ -371,6 +434,7 @@ function actualizarMaterias() {
   candado.waitLock(20000);
   try {
     var h = hojaBase();
+    var ultimaFila = h.getLastRow();
     var ultimaCol = h.getLastColumn();
     var headers = h.getRange(FILA_ENCABEZADO_BASE, 1, 1, ultimaCol).getValues()[0];
     var col = mapaColumnasBase(headers);
@@ -378,15 +442,24 @@ function actualizarMaterias() {
 
     var causas = leerCausas();
     var indiceStock = indiceMateriaStock();
+
+    // Una sola lectura y una sola escritura de toda la columna MATERIA
+    // (en vez de una llamada por fila, que con miles de filas se corta por tiempo).
+    var filaInicio = FILA_ENCABEZADO_BASE + 1;
+    var numFilas = ultimaFila - FILA_ENCABEZADO_BASE;
+    var rango = h.getRange(filaInicio, col.materia + 1, numFilas, 1);
+    var valores = rango.getValues();
     var actualizadas = 0;
 
     causas.forEach(function (c) {
       var materiaStock = indiceStock[claveCruce(c.rol, c.anio, c.libro)];
       if (materiaStock && materiaStock !== c.materia) {
-        h.getRange(c.idFila, col.materia + 1).setValue(materiaStock);
+        valores[c.idFila - filaInicio][0] = materiaStock;
         actualizadas++;
       }
     });
+
+    if (actualizadas > 0) rango.setValues(valores);
 
     return { ok: true, actualizadas: actualizadas };
   } finally {
