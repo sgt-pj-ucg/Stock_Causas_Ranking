@@ -158,15 +158,28 @@ input.buscador{min-width:220px;flex:1;}
 .chip-filtro span.x{cursor:pointer;font-weight:700;}
 
 /* -------- tabla -------- */
-.contenedor-tabla{overflow-x:auto;}
-table.datos{width:100%;border-collapse:collapse;font-size:12.5px;}
-table.datos th{background:var(--azul-claro);color:var(--azul-profundo);text-align:left;padding:8px 10px;
-  position:sticky;top:0;white-space:nowrap;}
-table.datos td{padding:7px 10px;border-bottom:1px solid var(--borde);white-space:nowrap;}
+.contenedor-tabla{overflow-x:auto;border-radius:0 0 var(--radio) var(--radio);}
+table.datos{width:100%;border-collapse:collapse;font-size:13px;}
+table.datos th{background:var(--azul-claro);color:var(--azul-profundo);text-align:left;padding:10px 12px;
+  position:sticky;top:0;white-space:nowrap;font-size:11px;letter-spacing:.04em;text-transform:uppercase;
+  font-weight:700;z-index:2;}
+table.datos td{padding:9px 12px;border-bottom:1px solid var(--borde);white-space:nowrap;vertical-align:middle;}
 table.datos tr:hover td{background:#fafbfc;}
 tr.fila-pesca td{background:#e6f4ec!important;}
 tr.fila-duplicada td{background:#fdecea!important;}
 tr.fila-seleccionada td{background:#fff3f7!important;}
+
+/* MATERIA: texto largo truncado con "…" — el texto completo aparece al pasar el mouse (title nativo) */
+.celda-materia{max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:help;}
+
+/* columna de acciones (Eliminar) fija a la derecha: siempre visible aunque haya scroll horizontal */
+th.col-acciones{right:0;z-index:3;}
+td.celda-acciones{position:sticky;right:0;background:var(--superficie);
+  box-shadow:-6px 0 10px -6px rgba(15,42,74,.18);}
+tr:hover td.celda-acciones{background:#fafbfc;}
+tr.fila-pesca td.celda-acciones{background:#e6f4ec!important;}
+tr.fila-duplicada td.celda-acciones{background:#fdecea!important;}
+tr.fila-seleccionada td.celda-acciones{background:#fff3f7!important;}
 .chip{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:700;}
 .chip::before{content:'';width:6px;height:6px;border-radius:50%;background:currentColor;}
 .chip-disponible{background:#e6f4ec;color:var(--verde);}
@@ -376,7 +389,7 @@ tr.fila-clicable{cursor:pointer;}
           <table class="datos" id="tablaStock">
             <thead><tr><th></th><th>ROL</th><th>AÑO</th><th>LIBRO</th><th>MATERIA</th><th>TIPO</th><th>COMPLEJIDAD</th>
               <th>ESTADO</th><th>RIJA</th><th>FECHA SUSPENSIÓN</th><th>DÍAS SUSP.</th>
-              <th>FECHA INGRESO</th><th>FECHA RELACIÓN</th><th></th></tr></thead>
+              <th>FECHA INGRESO</th><th>FECHA RELACIÓN</th><th class="col-acciones"></th></tr></thead>
             <tbody></tbody>
           </table>
         </div>
@@ -694,6 +707,18 @@ tr.fila-clicable{cursor:pointer;}
     return String(s==null?'':s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   }
 
+  /** Las materias vienen de Stock con relleno de espacios (texto de ancho fijo);
+   *  se limpia solo para mostrar — no se toca el dato real en la planilla. */
+  function materiaLimpia(m){
+    return String(m||'').replace(/\s+/g,' ').trim();
+  }
+
+  /** Celda MATERIA truncada con "…" + tooltip nativo (title) con el texto completo. */
+  function celdaMateria(c){
+    var texto = materiaLimpia(c.materia);
+    return '<td class="celda-materia" title="'+escaparAtributo(texto)+'">'+(texto||'—')+'</td>';
+  }
+
   function esPesca(c){
     var m = String((c && c.materia) || '').toLowerCase();
     return m.indexOf('pesca') > -1 && m.indexOf('acuicultura') > -1;
@@ -754,7 +779,7 @@ tr.fila-clicable{cursor:pointer;}
     var filtradas = estado.filtroReportes ? causas.filter(function(c){return c.estado===estado.filtroReportes;}) : causas;
     var tbody = document.querySelector('#tablaReportes tbody');
     tbody.innerHTML = filtradas.slice(0,300).map(function(c){
-      return '<tr class="'+(esPesca(c)?'fila-pesca':'')+'"><td>'+(c.rol||'')+'</td><td>'+(c.anio||'')+'</td><td>'+(c.libro||'')+'</td><td>'+(c.materia||'')+'</td>'+
+      return '<tr class="'+(esPesca(c)?'fila-pesca':'')+'"><td>'+(c.rol||'')+'</td><td>'+(c.anio||'')+'</td><td>'+(c.libro||'')+'</td>'+celdaMateria(c)+
         '<td>'+(c.tipo||'')+'</td><td>'+chipEstado(c.estado)+'</td><td>'+(c.fechaRelacion||'')+'</td></tr>';
     }).join('') || '<tr><td colspan="7" class="vacio">Sin resultados</td></tr>';
 
@@ -762,7 +787,7 @@ tr.fila-clicable{cursor:pointer;}
     var porMateria={}, porTipo={};
     causas.forEach(function(c){
       if(pendientesEstados[c.estado]){
-        var m=c.materia||'Sin materia', t=c.tipo||'Sin tipo';
+        var m=materiaLimpia(c.materia)||'Sin materia', t=c.tipo||'Sin tipo';
         porMateria[m]=(porMateria[m]||0)+1; porTipo[t]=(porTipo[t]||0)+1;
       }
     });
@@ -793,7 +818,7 @@ tr.fila-clicable{cursor:pointer;}
       var marcada = !!estado.seleccionStaging[c.idFila];
       return '<tr class="'+(esPesca(c)?'fila-pesca ':'')+(marcada?'fila-seleccionada':'')+'">'+
         '<td><input type="checkbox" data-id="'+c.idFila+'" class="chkRanking" '+(marcada?'checked':'')+'></td>'+
-        '<td>'+(i+1)+'</td><td>'+(c.rol||'')+'</td><td>'+(c.anio||'')+'</td><td>'+(c.libro||'')+'</td><td>'+(c.materia||'')+'</td>'+
+        '<td>'+(i+1)+'</td><td>'+(c.rol||'')+'</td><td>'+(c.anio||'')+'</td><td>'+(c.libro||'')+'</td>'+celdaMateria(c)+
         '<td class="puntaje">'+c.puntaje+'</td><td class="motivos">'+(c.motivos||[]).join(' · ')+'</td>'+
         '<td>'+(c.fechaRelacion||'')+'</td></tr>';
     }).join('') || '<tr><td colspan="9" class="vacio">Presiona "Generar ranking" para calcular</td></tr>';
@@ -869,12 +894,12 @@ tr.fila-clicable{cursor:pointer;}
       var pesca = esPesca(c);
       return '<tr class="fila-clicable '+(esDup?'fila-duplicada ':(pesca?'fila-pesca ':''))+(marcada?'fila-seleccionada':'')+'" data-id="'+c.idFila+'">'+
         '<td><input type="checkbox" data-id="'+c.idFila+'" class="chkStock" '+(marcada?'checked':'')+'></td>'+
-        '<td>'+(c.rol||'')+'</td><td>'+(c.anio||'')+'</td><td>'+(c.libro||'')+'</td><td>'+(c.materia||'')+'</td>'+
+        '<td>'+(c.rol||'')+'</td><td>'+(c.anio||'')+'</td><td>'+(c.libro||'')+'</td>'+celdaMateria(c)+
         '<td>'+(c.tipo||'')+'</td><td>'+construirSelectComplejidad(c)+'</td><td>'+construirSelectEstado(c)+'</td>'+
         '<td><input type="checkbox" class="chk-rija chkRija" data-id="'+c.idFila+'" '+(tieneRija?'checked':'')+'></td>'+
         '<td class="celda-fecha-susp" data-id="'+c.idFila+'">'+(c.fechaSuspension||'')+'</td><td class="celda-dias-susp" data-id="'+c.idFila+'">'+(c.diasSuspension||'')+'</td>'+
         '<td>'+(c.fechaIngreso||'')+'</td><td>'+(c.fechaRelacion||'')+'</td>'+
-        '<td>'+(esDup?'<button class="btn btn-peligro btnEliminarDup" data-id="'+c.idFila+'">Eliminar</button>':'')+'</td></tr>';
+        '<td class="celda-acciones">'+(esDup?'<button class="btn btn-peligro btnEliminarDup" data-id="'+c.idFila+'">Eliminar</button>':'')+'</td></tr>';
     }).join('') || '<tr><td colspan="13" class="vacio">Sin resultados</td></tr>';
 
     tbody.querySelectorAll('.chkStock').forEach(function(chk){
