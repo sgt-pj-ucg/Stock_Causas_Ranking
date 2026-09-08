@@ -131,6 +131,7 @@ table.datos th{background:var(--azul-claro);color:var(--azul-profundo);text-alig
   position:sticky;top:0;white-space:nowrap;}
 table.datos td{padding:7px 10px;border-bottom:1px solid var(--borde);white-space:nowrap;}
 table.datos tr:hover td{background:#fafbfc;}
+tr.fila-pesca td{background:#e6f4ec!important;}
 tr.fila-duplicada td{background:#fdecea!important;}
 tr.fila-seleccionada td{background:#fff3f7!important;}
 .chip{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:700;}
@@ -184,6 +185,13 @@ textarea.paste{width:100%;min-height:140px;padding:var(--e3);border:1px solid va
 .dato-solo .lbl{font-size:11px;color:var(--texto-suave);text-transform:uppercase;letter-spacing:.03em;}
 .dato-solo .val{font-size:13.5px;font-weight:600;color:var(--texto);margin-top:2px;}
 .campo-editar{margin-bottom:var(--e3);}
+.campo-estado{background:var(--azul-claro);border:1px solid #cddcec;border-radius:8px;padding:var(--e3);}
+.campo-estado label{color:var(--azul-profundo);font-size:13px;}
+.campo-estado select{font-weight:700;font-size:14.5px;border-color:#b9cee4;}
+.campo-rija{background:#fdf0f4;border:1px solid #f6d3e0;border-radius:8px;padding:var(--e3);}
+.chk-linea{display:flex!important;align-items:center;gap:10px;margin-bottom:0!important;cursor:pointer;}
+.chk-linea input{width:auto!important;}
+.chk-linea span{font-weight:700;color:var(--acento);font-size:13.5px;}
 .campo-editar label{display:block;font-weight:600;font-size:12.5px;color:var(--texto-suave);margin-bottom:6px;}
 .campo-editar input,.campo-editar select,.campo-editar textarea{width:100%;padding:10px 12px;
   border:1px solid var(--borde);border-radius:8px;background:var(--superficie);color:var(--texto);}
@@ -389,9 +397,7 @@ tr.fila-clicable{cursor:pointer;}
           <div class="dato-solo"><div class="lbl">ROL</div><div class="val" id="verRol">—</div></div>
           <div class="dato-solo"><div class="lbl">Año</div><div class="val" id="verAnio">—</div></div>
           <div class="dato-solo"><div class="lbl">Libro</div><div class="val" id="verLibro">—</div></div>
-          <div class="dato-solo"><div class="lbl">Tipo</div><div class="val" id="verTipo">—</div></div>
           <div class="dato-solo" style="grid-column:1/-1;"><div class="lbl">Materia</div><div class="val" id="verMateria">—</div></div>
-          <div class="dato-solo"><div class="lbl">Complejidad</div><div class="val" id="verComplejidad">—</div></div>
           <div class="dato-solo"><div class="lbl">Fecha ingreso</div><div class="val" id="verFechaIngreso">—</div></div>
           <div class="dato-solo" style="grid-column:1/-1;"><div class="lbl">Fecha relación</div><div class="val" id="verFechaRelacion">—</div></div>
           <div class="dato-solo" style="grid-column:1/-1;"><div class="lbl">Observación</div><div class="val" id="verObservacion">—</div></div>
@@ -399,13 +405,30 @@ tr.fila-clicable{cursor:pointer;}
       </div>
       <div class="drawer-seccion">
         <h3>Editar</h3>
+        <div class="campo-editar campo-estado">
+          <label for="editEstado">Estado</label>
+          <select id="editEstado">
+            <option>Disponible</option><option>En Trámite</option><option>En Tabla</option>
+            <option>Suspendida Procedimiento</option><option>Desistida</option>
+          </select>
+        </div>
+        <div class="campo-editar campo-rija">
+          <label class="chk-linea">
+            <input type="checkbox" id="editRija" class="chk-rija">
+            <span>Causa RIJA</span>
+          </label>
+        </div>
         <div class="campo-editar">
-          <label for="editRija">RIJA</label>
-          <input type="text" id="editRija" placeholder="Ej: RIJA (dejar vacío si no aplica)">
+          <label for="editTipo">Tipo</label>
+          <input type="text" id="editTipo" placeholder="Ej: D">
+        </div>
+        <div class="campo-editar">
+          <label for="editComplejidad">Complejidad</label>
+          <input type="text" id="editComplejidad" placeholder="Ej: Estudio (E)">
         </div>
         <div class="campo-editar">
           <label for="editFechaSuspension">Fecha de suspensión</label>
-          <input type="text" id="editFechaSuspension" placeholder="dd-mm-aaaa">
+          <input type="date" id="editFechaSuspension">
         </div>
         <div class="campo-editar">
           <label for="editDiasSuspension">Cantidad de días de suspensión</label>
@@ -414,13 +437,6 @@ tr.fila-clicable{cursor:pointer;}
         <div class="campo-editar">
           <label for="editComentarios">Comentarios</label>
           <textarea id="editComentarios" placeholder="Observaciones internas..."></textarea>
-        </div>
-        <div class="campo-editar">
-          <label for="editEstado">Estado</label>
-          <select id="editEstado">
-            <option>Disponible</option><option>En Trámite</option><option>En Tabla</option>
-            <option>Suspendida Procedimiento</option><option>Desistida</option>
-          </select>
         </div>
       </div>
     </div>
@@ -589,6 +605,11 @@ tr.fila-clicable{cursor:pointer;}
 
   function claveDup(c){ return String(c.rol)+'|'+String(c.anio)+'|'+String(c.libro||'').trim().toUpperCase(); }
 
+  function esPesca(c){
+    var m = String((c && c.materia) || '').toLowerCase();
+    return m.indexOf('pesca') > -1 && m.indexOf('acuicultura') > -1;
+  }
+
   function calcularDuplicados(causas){
     var grupos = {};
     causas.forEach(function(c){ var k=claveDup(c); (grupos[k]=grupos[k]||[]).push(c); });
@@ -644,7 +665,7 @@ tr.fila-clicable{cursor:pointer;}
     var filtradas = estado.filtroReportes ? causas.filter(function(c){return c.estado===estado.filtroReportes;}) : causas;
     var tbody = document.querySelector('#tablaReportes tbody');
     tbody.innerHTML = filtradas.slice(0,300).map(function(c){
-      return '<tr><td>'+(c.rol||'')+'</td><td>'+(c.anio||'')+'</td><td>'+(c.libro||'')+'</td><td>'+(c.materia||'')+'</td>'+
+      return '<tr class="'+(esPesca(c)?'fila-pesca':'')+'"><td>'+(c.rol||'')+'</td><td>'+(c.anio||'')+'</td><td>'+(c.libro||'')+'</td><td>'+(c.materia||'')+'</td>'+
         '<td>'+(c.tipo||'')+'</td><td>'+chipEstado(c.estado)+'</td><td>'+(c.fechaRelacion||'')+'</td></tr>';
     }).join('') || '<tr><td colspan="7" class="vacio">Sin resultados</td></tr>';
 
@@ -681,7 +702,7 @@ tr.fila-clicable{cursor:pointer;}
     var tbody = document.querySelector('#tablaRanking tbody');
     tbody.innerHTML = estado.ranking.map(function(c, i){
       var marcada = !!estado.seleccionStaging[c.idFila];
-      return '<tr class="'+(marcada?'fila-seleccionada':'')+'">'+
+      return '<tr class="'+(esPesca(c)?'fila-pesca ':'')+(marcada?'fila-seleccionada':'')+'">'+
         '<td><input type="checkbox" data-id="'+c.idFila+'" class="chkRanking" '+(marcada?'checked':'')+'></td>'+
         '<td>'+(i+1)+'</td><td>'+(c.rol||'')+'</td><td>'+(c.anio||'')+'</td><td>'+(c.libro||'')+'</td><td>'+(c.materia||'')+'</td>'+
         '<td class="puntaje">'+c.puntaje+'</td><td class="motivos">'+(c.motivos||[]).join(' · ')+'</td>'+
@@ -721,7 +742,8 @@ tr.fila-clicable{cursor:pointer;}
       var esDup = !!duplicados[c.idFila];
       var marcada = !!estado.seleccionStaging[c.idFila];
       var tieneRija = String(c.rija||'').toUpperCase().indexOf('RIJA') > -1;
-      return '<tr class="fila-clicable '+(esDup?'fila-duplicada ':'')+(marcada?'fila-seleccionada':'')+'" data-id="'+c.idFila+'">'+
+      var pesca = esPesca(c);
+      return '<tr class="fila-clicable '+(esDup?'fila-duplicada ':(pesca?'fila-pesca ':''))+(marcada?'fila-seleccionada':'')+'" data-id="'+c.idFila+'">'+
         '<td><input type="checkbox" data-id="'+c.idFila+'" class="chkStock" '+(marcada?'checked':'')+'></td>'+
         '<td>'+(c.rol||'')+'</td><td>'+(c.anio||'')+'</td><td>'+(c.libro||'')+'</td><td>'+(c.materia||'')+'</td>'+
         '<td>'+(c.tipo||'')+'</td><td>'+(c.complejidad||'')+'</td><td>'+chipEstado(c.estado)+'</td>'+
@@ -796,23 +818,35 @@ tr.fila-clicable{cursor:pointer;}
   /* ================= EDITAR CAUSA ================= */
   var modalEditar = document.getElementById('modalEditar');
 
+  /** dd-mm-yyyy, dd/mm/yyyy o yyyy-mm-dd -> yyyy-mm-dd (formato que exige <input type="date">) */
+  function fechaAFormatoInput(valor){
+    var t = String(valor || '').trim();
+    if(!t) return '';
+    var m = t.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if(m) return m[1]+'-'+m[2]+'-'+m[3];
+    m = t.match(/^(\d{1,2})[-\/](\d{1,2})[-\/](\d{4})$/);
+    if(m) return m[3]+'-'+('0'+m[2]).slice(-2)+'-'+('0'+m[1]).slice(-2);
+    return '';
+  }
+
   function abrirModalEditar(idFila){
     var causa = estado.causas.find(function(c){ return String(c.idFila)===String(idFila); });
     if(!causa) return;
     modalEditar.dataset.idFila = idFila;
+    modalEditar.dataset.estadoOriginal = causa.estado || '';
     document.getElementById('editTitulo').textContent = 'ROL '+(causa.rol||'')+'/'+(causa.anio||'')+' · '+(causa.libro||'');
     document.getElementById('editSubtitulo').textContent = causa.estado || '';
     document.getElementById('verRol').textContent = causa.rol || '—';
     document.getElementById('verAnio').textContent = causa.anio || '—';
     document.getElementById('verLibro').textContent = causa.libro || '—';
-    document.getElementById('verTipo').textContent = causa.tipo || '—';
     document.getElementById('verMateria').textContent = causa.materia || '—';
-    document.getElementById('verComplejidad').textContent = causa.complejidad || '—';
     document.getElementById('verFechaIngreso').textContent = causa.fechaIngreso || '—';
     document.getElementById('verFechaRelacion').textContent = causa.fechaRelacion || '—';
     document.getElementById('verObservacion').textContent = causa.observacion || '—';
-    document.getElementById('editRija').value = causa.rija || '';
-    document.getElementById('editFechaSuspension').value = causa.fechaSuspension || '';
+    document.getElementById('editRija').checked = String(causa.rija||'').toUpperCase().indexOf('RIJA') > -1;
+    document.getElementById('editTipo').value = causa.tipo || '';
+    document.getElementById('editComplejidad').value = causa.complejidad || '';
+    document.getElementById('editFechaSuspension').value = fechaAFormatoInput(causa.fechaSuspension);
     document.getElementById('editDiasSuspension').value = causa.diasSuspension || '';
     document.getElementById('editComentarios').value = causa.comentarios || '';
     document.getElementById('editEstado').value = causa.estado || 'Disponible';
@@ -833,7 +867,9 @@ tr.fila-clicable{cursor:pointer;}
     var idFila = modalEditar.dataset.idFila;
     var btn = this; btn.disabled = true; btn.textContent = 'Guardando...';
     var cambios = {
-      rija: document.getElementById('editRija').value.trim(),
+      rija: document.getElementById('editRija').checked ? 'RIJA' : '',
+      tipo: document.getElementById('editTipo').value.trim(),
+      complejidad: document.getElementById('editComplejidad').value.trim(),
       fechaSuspension: document.getElementById('editFechaSuspension').value.trim(),
       diasSuspension: document.getElementById('editDiasSuspension').value.trim(),
       comentarios: document.getElementById('editComentarios').value.trim(),
