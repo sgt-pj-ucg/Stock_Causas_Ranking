@@ -28,12 +28,12 @@ button{font-family:inherit;cursor:pointer;}
 input,select,textarea{font-family:inherit;font-size:14px;}
 
 /* -------- pantallas oscuras (login / bienvenida) -------- */
-.pantalla-oscura{position:fixed;inset:0;background:
-    radial-gradient(1200px 600px at 15% 0%, #16375c 0%, transparent 60%),
-    radial-gradient(1000px 700px at 100% 100%, #0f2c4c 0%, transparent 55%),
-    linear-gradient(160deg,var(--azul-noche),var(--azul-profundo));
+.pantalla-oscura{position:fixed;inset:0;
+  background:linear-gradient(160deg,var(--azul-noche) 0%,var(--azul-profundo) 55%,var(--azul-noche) 100%);
   display:flex;flex-direction:column;align-items:center;justify-content:center;
-  z-index:100;padding:var(--e4);overflow-y:auto;}
+  z-index:100;padding:var(--e4);overflow-y:auto;
+  opacity:1;transition:opacity 280ms ease;}
+.pantalla-oscura.entrando{opacity:0;}
 .marca{text-align:center;margin-bottom:var(--e4);}
 .marca .icono{width:118px;height:118px;margin:0 auto 14px;display:block;}
 .marca h1{color:#fff;font-size:21px;margin:0;}
@@ -52,10 +52,10 @@ input,select,textarea{font-family:inherit;font-size:14px;}
 .caja-login button:hover{filter:brightness(1.1);}
 .error-login{color:#ff8fa8;font-size:12.5px;margin-top:var(--e2);min-height:16px;text-align:center;}
 
-.grid-bienvenida{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:var(--e3);
-  max-width:1100px;width:100%;margin-top:var(--e4);}
+.grid-bienvenida{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:var(--e3);
+  max-width:1720px;width:100%;margin-top:var(--e4);}
 .tarjeta-bienvenida{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);
-  border-radius:var(--radio);padding:var(--e4) var(--e3);cursor:pointer;transition:var(--transicion);
+  border-radius:var(--radio);padding:var(--e3);cursor:pointer;transition:var(--transicion);
   opacity:0;transform:translateY(14px);animation:aparecer 420ms ease forwards;}
 @media (prefers-reduced-motion: reduce){.tarjeta-bienvenida{animation:none;opacity:1;transform:none;}}
 @keyframes aparecer{to{opacity:1;transform:translateY(0);}}
@@ -525,7 +525,6 @@ tr.fila-clicable{cursor:pointer;}
   function mostrarErrorLogin(msj){ document.getElementById('errorLogin').textContent = msj; }
 
   function mostrarBienvenida(){
-    pantallaAcceso.classList.add('oculto');
     var cont = document.getElementById('tarjetasBienvenida');
     cont.innerHTML = ETAPAS.map(function(e, i){
       return '<div class="tarjeta-bienvenida" data-vista="'+e.vista+'" style="animation-delay:'+(i*80)+'ms">'+
@@ -534,14 +533,26 @@ tr.fila-clicable{cursor:pointer;}
     cont.querySelectorAll('.tarjeta-bienvenida').forEach(function(t){
       t.addEventListener('click', function(){ entrarApp(t.dataset.vista); });
     });
-    pantallaBienvenida.classList.remove('oculto');
+    // fundido: se apaga la pantalla de acceso mientras aparece la de bienvenida
+    pantallaAcceso.classList.add('entrando');
+    setTimeout(function(){
+      pantallaAcceso.classList.add('oculto');
+      pantallaBienvenida.classList.remove('oculto');
+      pantallaBienvenida.classList.add('entrando');
+      requestAnimationFrame(function(){
+        requestAnimationFrame(function(){ pantallaBienvenida.classList.remove('entrando'); });
+      });
+    }, 280);
   }
 
   function entrarApp(vistaInicial){
-    pantallaBienvenida.classList.add('oculto');
-    app.classList.remove('oculto');
-    if(vistaInicial) irAVista(vistaInicial);
-    cargarTodo();
+    pantallaBienvenida.classList.add('entrando');
+    setTimeout(function(){
+      pantallaBienvenida.classList.add('oculto');
+      app.classList.remove('oculto');
+      if(vistaInicial) irAVista(vistaInicial);
+      cargarTodo();
+    }, 280);
   }
 
   // configuración vía hash: #s=URL&k=CLAVE
