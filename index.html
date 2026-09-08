@@ -238,6 +238,27 @@ button.btn-enlace:hover{color:var(--acento);}
 /* -------- toggle rápido RIJA en la tabla -------- */
 .chk-rija{width:18px;height:18px;accent-color:var(--acento);cursor:pointer;}
 tr.fila-clicable{cursor:pointer;}
+
+/* -------- edición rápida inline (COMPLEJIDAD / ESTADO) en la tabla -------- */
+.sel-inline{font-family:inherit;cursor:pointer;}
+.sel-inline:disabled{opacity:.5;cursor:wait;}
+.sel-complejidad{border:1px solid var(--borde);border-radius:6px;padding:4px 6px;font-size:12px;
+  background:var(--superficie);color:var(--texto);max-width:170px;}
+.sel-estado{border:none;border-radius:999px;padding:4px 10px;font-size:11px;font-weight:700;}
+.sel-estado.chip-disponible{background:#e6f4ec;color:var(--verde);}
+.sel-estado.chip-tramite{background:#fdf3e3;color:var(--ambar);}
+.sel-estado.chip-tabla{background:#e8eef8;color:var(--azul-medio);}
+.sel-estado.chip-suspendida{background:#f1e8f7;color:var(--purpura);}
+.sel-estado.chip-desistida{background:#fceceb;color:var(--rojo);}
+
+/* -------- popup rápido: fecha y días al marcar "Suspendida Procedimiento" -------- */
+.popup-fondo{position:fixed;inset:0;background:rgba(15,42,74,.45);z-index:250;
+  display:flex;align-items:center;justify-content:center;padding:var(--e3);}
+.popup-caja{background:var(--superficie);border-radius:var(--radio);box-shadow:0 20px 60px rgba(0,0,0,.3);
+  width:min(360px,94vw);padding:var(--e4);}
+.popup-caja h3{margin:0 0 4px;font-size:15px;color:var(--azul-profundo);}
+.popup-caja .subt{margin:0 0 var(--e3);color:var(--texto-suave);font-size:12.5px;}
+.popup-acciones{display:flex;justify-content:flex-end;gap:var(--e2);margin-top:var(--e3);}
 </style>
 </head>
 <body>
@@ -482,6 +503,25 @@ tr.fila-clicable{cursor:pointer;}
   </div>
 </div>
 
+<div id="popupSuspension" class="popup-fondo oculto">
+  <div class="popup-caja">
+    <h3>Suspender procedimiento</h3>
+    <p class="subt" id="popupSuspensionSub"></p>
+    <div class="campo-editar">
+      <label for="popupFechaSuspension">Fecha de suspensión</label>
+      <input type="date" id="popupFechaSuspension">
+    </div>
+    <div class="campo-editar">
+      <label for="popupDiasSuspension">Cantidad de días de suspensión</label>
+      <input type="number" id="popupDiasSuspension" min="0" placeholder="Ej: 30">
+    </div>
+    <div class="popup-acciones">
+      <button class="btn btn-secundario" id="btnCancelarSuspension">Cancelar</button>
+      <button class="btn btn-primario" id="btnGuardarSuspension">Guardar</button>
+    </div>
+  </div>
+</div>
+
 <script>
 (function(){
   "use strict";
@@ -650,6 +690,10 @@ tr.fila-clicable{cursor:pointer;}
 
   function claveDup(c){ return String(c.rol)+'|'+String(c.anio)+'|'+String(c.libro||'').trim().toUpperCase(); }
 
+  function escaparAtributo(s){
+    return String(s==null?'':s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
   function esPesca(c){
     var m = String((c && c.materia) || '').toLowerCase();
     return m.indexOf('pesca') > -1 && m.indexOf('acuicultura') > -1;
@@ -777,6 +821,41 @@ tr.fila-clicable{cursor:pointer;}
 
   var soloDuplicados = false;
 
+  var OPCIONES_COMPLEJIDAD = ['', 'Estudio (E)', 'Compleja (A)', 'Mediana complejidad (B)', 'No compleja (C)'];
+  var OPCIONES_ESTADO = ['Disponible', 'En Trámite', 'En Tabla', 'Suspendida Procedimiento', 'Desistida'];
+  var CLASE_CHIP_ESTADO = {
+    'Disponible':'chip-disponible', 'En Trámite':'chip-tramite', 'En Tabla':'chip-tabla',
+    'Suspendida Procedimiento':'chip-suspendida', 'Desistida':'chip-desistida'
+  };
+
+  /** <select> de edición rápida para COMPLEJIDAD; si el valor actual no está en el
+   *  catálogo (mucha data histórica es texto libre), lo agrega como opción extra
+   *  para no perderlo ni mostrar el select vacío. */
+  function construirSelectComplejidad(c){
+    var valor = c.complejidad || '';
+    var conocida = OPCIONES_COMPLEJIDAD.indexOf(valor) > -1;
+    var html = '<select class="sel-inline sel-complejidad" data-id="'+c.idFila+'">';
+    OPCIONES_COMPLEJIDAD.forEach(function(o){
+      html += '<option value="'+escaparAtributo(o)+'" '+(o===valor?'selected':'')+'>'+(o||'(Sin definir)')+'</option>';
+    });
+    if(!conocida && valor){
+      html += '<option value="'+escaparAtributo(valor)+'" selected>'+escaparAtributo(valor)+' (actual)</option>';
+    }
+    html += '</select>';
+    return html;
+  }
+
+  function construirSelectEstado(c){
+    var valor = c.estado || 'Disponible';
+    var clase = CLASE_CHIP_ESTADO[valor] || 'chip-tramite';
+    var html = '<select class="sel-inline sel-estado '+clase+'" data-id="'+c.idFila+'">';
+    OPCIONES_ESTADO.forEach(function(o){
+      html += '<option value="'+o+'" '+(o===valor?'selected':'')+'>'+o+'</option>';
+    });
+    html += '</select>';
+    return html;
+  }
+
   function renderStock(){
     var lista = causasFiltradas();
     var duplicados = calcularDuplicados(estado.causas);
@@ -791,9 +870,9 @@ tr.fila-clicable{cursor:pointer;}
       return '<tr class="fila-clicable '+(esDup?'fila-duplicada ':(pesca?'fila-pesca ':''))+(marcada?'fila-seleccionada':'')+'" data-id="'+c.idFila+'">'+
         '<td><input type="checkbox" data-id="'+c.idFila+'" class="chkStock" '+(marcada?'checked':'')+'></td>'+
         '<td>'+(c.rol||'')+'</td><td>'+(c.anio||'')+'</td><td>'+(c.libro||'')+'</td><td>'+(c.materia||'')+'</td>'+
-        '<td>'+(c.tipo||'')+'</td><td>'+(c.complejidad||'')+'</td><td>'+chipEstado(c.estado)+'</td>'+
+        '<td>'+(c.tipo||'')+'</td><td>'+construirSelectComplejidad(c)+'</td><td>'+construirSelectEstado(c)+'</td>'+
         '<td><input type="checkbox" class="chk-rija chkRija" data-id="'+c.idFila+'" '+(tieneRija?'checked':'')+'></td>'+
-        '<td>'+(c.fechaSuspension||'')+'</td><td>'+(c.diasSuspension||'')+'</td>'+
+        '<td class="celda-fecha-susp" data-id="'+c.idFila+'">'+(c.fechaSuspension||'')+'</td><td class="celda-dias-susp" data-id="'+c.idFila+'">'+(c.diasSuspension||'')+'</td>'+
         '<td>'+(c.fechaIngreso||'')+'</td><td>'+(c.fechaRelacion||'')+'</td>'+
         '<td>'+(esDup?'<button class="btn btn-peligro btnEliminarDup" data-id="'+c.idFila+'">Eliminar</button>':'')+'</td></tr>';
     }).join('') || '<tr><td colspan="13" class="vacio">Sin resultados</td></tr>';
@@ -818,6 +897,33 @@ tr.fila-clicable{cursor:pointer;}
           renderReportesLocal();
         }).catch(function(err){ chk.checked=!chk.checked; mostrarErrorGlobal(err); })
         .finally(function(){ chk.disabled=false; });
+      });
+    });
+    tbody.querySelectorAll('.sel-complejidad').forEach(function(sel){
+      sel.addEventListener('click', function(e){ e.stopPropagation(); });
+      sel.addEventListener('change', function(){
+        var idFila = sel.dataset.id;
+        var nuevoValor = sel.value;
+        sel.disabled = true;
+        llamarServicio({accion:'actualizarCausa', idFila: idFila, cambios:{complejidad: nuevoValor}}).then(function(){
+          var causa = estado.causas.find(function(c){return String(c.idFila)===String(idFila);});
+          if(causa) causa.complejidad = nuevoValor;
+        }).catch(function(err){ mostrarErrorGlobal(err); renderStock(); })
+        .finally(function(){ sel.disabled=false; });
+      });
+    });
+    tbody.querySelectorAll('.sel-estado').forEach(function(sel){
+      sel.dataset.valorAnterior = sel.value;
+      sel.addEventListener('click', function(e){ e.stopPropagation(); });
+      sel.addEventListener('change', function(){
+        var idFila = sel.dataset.id;
+        var nuevoValor = sel.value;
+        var valorAnterior = sel.dataset.valorAnterior;
+        if(nuevoValor === 'Suspendida Procedimiento'){
+          abrirPopupSuspension(idFila, sel);
+          return;
+        }
+        guardarEstadoInline(sel, idFila, nuevoValor, valorAnterior);
       });
     });
     tbody.querySelectorAll('tr.fila-clicable').forEach(function(tr){
@@ -858,6 +964,77 @@ tr.fila-clicable{cursor:pointer;}
       return llamarServicio({accion:'listar'});
     }).then(function(datos){ estado.causas=datos.causas; renderStock(); renderReportesLocal(); })
     .catch(mostrarErrorGlobal).finally(function(){ btn.disabled=false; });
+  });
+
+  /* ================= EDICIÓN RÁPIDA DE ESTADO (inline) ================= */
+  function guardarEstadoInline(sel, idFila, nuevoValor, valorAnterior){
+    sel.disabled = true;
+    llamarServicio({accion:'actualizarCausa', idFila: idFila, cambios:{estado: nuevoValor}}).then(function(){
+      var causa = estado.causas.find(function(c){return String(c.idFila)===String(idFila);});
+      if(causa) causa.estado = nuevoValor;
+      sel.dataset.valorAnterior = nuevoValor;
+      sel.className = 'sel-inline sel-estado ' + (CLASE_CHIP_ESTADO[nuevoValor] || 'chip-tramite');
+      renderReportesLocal();
+    }).catch(function(err){ sel.value = valorAnterior; mostrarErrorGlobal(err); })
+    .finally(function(){ sel.disabled=false; });
+  }
+
+  /** yyyy-mm-dd (formato de <input type="date">) -> dd-mm-yyyy (formato del resto de la app) */
+  function formatoInputAFecha(valor){
+    var m = String(valor||'').match(/^(\d{4})-(\d{2})-(\d{2})/);
+    return m ? (m[3]+'-'+m[2]+'-'+m[1]) : '';
+  }
+
+  var popupSuspension = document.getElementById('popupSuspension');
+  var popupContexto = null; // {idFila, sel, valorAnterior}
+
+  function abrirPopupSuspension(idFila, sel){
+    var causa = estado.causas.find(function(c){return String(c.idFila)===String(idFila);});
+    popupContexto = { idFila: idFila, sel: sel, valorAnterior: sel.dataset.valorAnterior };
+    document.getElementById('popupSuspensionSub').textContent = 'ROL '+(causa?causa.rol:'')+'/'+(causa?causa.anio:'')+' · '+(causa?causa.libro:'');
+    document.getElementById('popupFechaSuspension').value = fechaAFormatoInput(causa ? causa.fechaSuspension : '');
+    document.getElementById('popupDiasSuspension').value = causa ? (causa.diasSuspension||'') : '';
+    sel.disabled = true;
+    popupSuspension.classList.remove('oculto');
+  }
+
+  function cerrarPopupSuspension(revertir){
+    if(revertir && popupContexto) popupContexto.sel.value = popupContexto.valorAnterior;
+    if(popupContexto) popupContexto.sel.disabled = false;
+    popupSuspension.classList.add('oculto');
+    popupContexto = null;
+  }
+
+  document.getElementById('btnCancelarSuspension').addEventListener('click', function(){ cerrarPopupSuspension(true); });
+  popupSuspension.addEventListener('click', function(e){ if(e.target===popupSuspension) cerrarPopupSuspension(true); });
+
+  document.getElementById('btnGuardarSuspension').addEventListener('click', function(){
+    if(!popupContexto) return;
+    var idFila = popupContexto.idFila, sel = popupContexto.sel;
+    var fechaInput = document.getElementById('popupFechaSuspension').value;
+    var dias = document.getElementById('popupDiasSuspension').value.trim();
+    if(!fechaInput){ alert('Ingresa la fecha de suspensión.'); return; }
+    if(!dias){ alert('Ingresa la cantidad de días.'); return; }
+    var fechaMostrada = formatoInputAFecha(fechaInput);
+    var btn = this; btn.disabled = true; btn.textContent = 'Guardando...';
+    llamarServicio({accion:'actualizarCausa', idFila: idFila, cambios:{
+      estado:'Suspendida Procedimiento', fechaSuspension: fechaMostrada, diasSuspension: dias
+    }}).then(function(){
+      var causa = estado.causas.find(function(c){return String(c.idFila)===String(idFila);});
+      if(causa){ causa.estado='Suspendida Procedimiento'; causa.fechaSuspension=fechaMostrada; causa.diasSuspension=dias; }
+      sel.dataset.valorAnterior = 'Suspendida Procedimiento';
+      sel.className = 'sel-inline sel-estado chip-suspendida';
+      sel.disabled = false;
+      var fila = sel.closest('tr');
+      if(fila){
+        var cf = fila.querySelector('.celda-fecha-susp'); if(cf) cf.textContent = fechaMostrada;
+        var cd = fila.querySelector('.celda-dias-susp'); if(cd) cd.textContent = dias;
+      }
+      renderReportesLocal();
+      popupSuspension.classList.add('oculto');
+      popupContexto = null;
+    }).catch(function(err){ mostrarErrorGlobal(err); cerrarPopupSuspension(true); })
+    .finally(function(){ btn.disabled=false; btn.textContent='Guardar'; });
   });
 
   /* ================= EDITAR CAUSA ================= */
