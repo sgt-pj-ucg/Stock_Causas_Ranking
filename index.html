@@ -959,8 +959,8 @@ tr.fila-clicable{cursor:pointer;}
   document.getElementById('btnPrepararTabla').addEventListener('click', function(){
     var ids = Object.keys(estado.seleccionStaging);
     if(ids.length===0) return;
-    var listado = ids.map(function(id){ var c=estado.seleccionStaging[id]; return (c.rol||'')+' - '+(c.libro||'')+' ('+(c.anio||'')+')'; }).join('n');
-    if(!confirm('Se marcarán como "En Tabla" '+ids.length+' causa(s):nn'+listado+'nn¿Confirmar y guardar?')) return;
+    var listado = ids.map(function(id){ var c=estado.seleccionStaging[id]; return (c.rol||'')+' - '+(c.libro||'')+' ('+(c.anio||'')+')'; }).join('\n');
+    if(!confirm('Se marcarán como "En Tabla" '+ids.length+' causa(s):\n\n'+listado+'\n\n¿Confirmar y guardar?')) return;
     llamarServicio({accion:'confirmarTabla', idsFila: ids}).then(function(datos){
       alert('Actualizadas '+datos.actualizadas+' causa(s) a estado "En Tabla".');
       estado.seleccionStaging = {};
@@ -974,8 +974,8 @@ tr.fila-clicable{cursor:pointer;}
 
   /* ================= INGESTA ================= */
   function parsearPegado(texto){
-    return texto.split('n').map(function(l){return l.trim();}).filter(Boolean)
-      .map(function(l){return l.split('t');});
+    return texto.split('\n').map(function(l){return l.trim();}).filter(Boolean)
+      .map(function(l){return l.split('\t');});
   }
 
   document.getElementById('btnIngestar').addEventListener('click', function(){
