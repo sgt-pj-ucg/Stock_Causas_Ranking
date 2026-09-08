@@ -158,6 +158,22 @@ textarea.paste{width:100%;min-height:140px;padding:var(--e3);border:1px solid va
 .aviso{background:#fdf3e3;border:1px solid #f5d999;color:#7a5200;border-radius:8px;padding:var(--e2) var(--e3);
   font-size:12.5px;margin-bottom:var(--e3);}
 .vacio{color:var(--texto-suave);font-size:13px;padding:var(--e4);text-align:center;}
+
+/* -------- modal edición de causa -------- */
+.modal-fondo{position:fixed;inset:0;background:rgba(15,42,74,.45);z-index:200;
+  display:flex;align-items:center;justify-content:center;padding:var(--e3);}
+.modal-caja{background:var(--superficie);border-radius:var(--radio);box-shadow:0 20px 60px rgba(0,0,0,.3);
+  width:min(480px,94vw);max-height:90vh;overflow-y:auto;padding:var(--e4);}
+.modal-caja h2{margin:0 0 var(--e3);font-size:16px;color:var(--azul-profundo);}
+.campo-editar{margin-bottom:var(--e3);}
+.campo-editar label{display:block;font-weight:600;font-size:12.5px;color:var(--texto-suave);margin-bottom:6px;}
+.campo-editar input,.campo-editar select,.campo-editar textarea{width:100%;padding:10px 12px;
+  border:1px solid var(--borde);border-radius:8px;background:var(--superficie);color:var(--texto);}
+.campo-editar textarea{min-height:70px;resize:vertical;}
+.modal-acciones{display:flex;justify-content:flex-end;gap:var(--e2);margin-top:var(--e4);}
+button.btn-enlace{background:none;border:none;color:var(--azul-medio);font-weight:600;font-size:12.5px;
+  padding:4px 8px;text-decoration:underline;}
+button.btn-enlace:hover{color:var(--acento);}
 </style>
 </head>
 <body>
@@ -375,6 +391,42 @@ textarea.paste{width:100%;min-height:140px;padding:var(--e3);border:1px solid va
   </div>
 </div>
 
+<div id="modalEditar" class="modal-fondo oculto">
+  <div class="modal-caja">
+    <div style="display:flex;align-items:center;justify-content:space-between;">
+      <h2 id="editTitulo">Editar causa</h2>
+      <button class="btn-enlace" id="btnCerrarModalEditar" style="font-size:18px;text-decoration:none;">×</button>
+    </div>
+    <div class="campo-editar">
+      <label for="editRija">RIJA</label>
+      <input type="text" id="editRija" placeholder="Ej: RIJA (dejar vacío si no aplica)">
+    </div>
+    <div class="campo-editar">
+      <label for="editFechaSuspension">Fecha de suspensión</label>
+      <input type="text" id="editFechaSuspension" placeholder="dd-mm-aaaa">
+    </div>
+    <div class="campo-editar">
+      <label for="editDiasSuspension">Cantidad de días de suspensión</label>
+      <input type="number" id="editDiasSuspension" min="0" placeholder="Ej: 30">
+    </div>
+    <div class="campo-editar">
+      <label for="editComentarios">Comentarios</label>
+      <textarea id="editComentarios" placeholder="Observaciones internas..."></textarea>
+    </div>
+    <div class="campo-editar">
+      <label for="editEstado">Estado</label>
+      <select id="editEstado">
+        <option>Disponible</option><option>En Trámite</option><option>En Tabla</option>
+        <option>Suspendida Procedimiento</option><option>Desistida</option>
+      </select>
+    </div>
+    <div class="modal-acciones">
+      <button class="btn btn-secundario" id="btnCancelarEdicion">Cancelar</button>
+      <button class="btn btn-primario" id="btnGuardarEdicion">Guardar cambios</button>
+    </div>
+  </div>
+</div>
+
 <script>
 (function(){
   "use strict";
@@ -389,8 +441,13 @@ textarea.paste{width:100%;min-height:140px;padding:var(--e3);border:1px solid va
     { vista:'config', numero:5, titulo:'Configuración', desc:'Definir la prioridad de LIBRO y la conexión al servicio de datos.' }
   ];
 
+  // Conexión fija: a diferencia de Notificaciones CINJ, esta plataforma es de un solo
+  // equipo/planilla, así que el servicio queda disponible de entrada en cualquier
+  // navegador — no depende de que cada persona lo configure la primera vez.
+  var URL_SERVICIO_DEFECTO = 'https://script.google.com/macros/s/AKfycbwQFp8MjjbZyDcPdgdsuJFTRYTbddlcCKf31kUDl0pF1bgrTbf-ui71PKrtAZKAIxmiww/exec';
+
   var almacen = {
-    urlServicio: localStorage.getItem('stockCausas.urlServicio') || '',
+    urlServicio: localStorage.getItem('stockCausas.urlServicio') || URL_SERVICIO_DEFECTO,
     clave: sessionStorage.getItem('stockCausas.clave') || ''
   };
 
@@ -655,7 +712,8 @@ textarea.paste{width:100%;min-height:140px;padding:var(--e3);border:1px solid va
         '<td><input type="checkbox" data-id="'+c.idFila+'" class="chkStock" '+(marcada?'checked':'')+'></td>'+
         '<td>'+(c.rol||'')+'</td><td>'+(c.anio||'')+'</td><td>'+(c.libro||'')+'</td><td>'+(c.materia||'')+'</td>'+
         '<td>'+(c.tipo||'')+'</td><td>'+chipEstado(c.estado)+'</td><td>'+(c.fechaIngreso||'')+'</td><td>'+(c.fechaRelacion||'')+'</td>'+
-        '<td>'+(esDup?'<button class="btn btn-peligro btnEliminarDup" data-id="'+c.idFila+'">Eliminar</button>':'')+'</td></tr>';
+        '<td><button class="btn-enlace btnEditarCausa" data-id="'+c.idFila+'">Editar</button>'+
+        (esDup?' <button class="btn btn-peligro btnEliminarDup" data-id="'+c.idFila+'">Eliminar</button>':'')+'</td></tr>';
     }).join('') || '<tr><td colspan="10" class="vacio">Sin resultados</td></tr>';
 
     tbody.querySelectorAll('.chkStock').forEach(function(chk){
@@ -664,6 +722,9 @@ textarea.paste{width:100%;min-height:140px;padding:var(--e3);border:1px solid va
         toggleStaging(causa, chk.checked);
         renderStock();
       });
+    });
+    tbody.querySelectorAll('.btnEditarCausa').forEach(function(btn){
+      btn.addEventListener('click', function(){ abrirModalEditar(btn.dataset.id); });
     });
     tbody.querySelectorAll('.btnEliminarDup').forEach(function(btn){
       btn.addEventListener('click', function(){
@@ -699,6 +760,47 @@ textarea.paste{width:100%;min-height:140px;padding:var(--e3);border:1px solid va
       return llamarServicio({accion:'listar'});
     }).then(function(datos){ estado.causas=datos.causas; renderStock(); renderReportesLocal(); })
     .catch(mostrarErrorGlobal).finally(function(){ btn.disabled=false; });
+  });
+
+  /* ================= EDITAR CAUSA ================= */
+  var modalEditar = document.getElementById('modalEditar');
+
+  function abrirModalEditar(idFila){
+    var causa = estado.causas.find(function(c){ return String(c.idFila)===String(idFila); });
+    if(!causa) return;
+    modalEditar.dataset.idFila = idFila;
+    document.getElementById('editTitulo').textContent = 'Editar causa ROL '+(causa.rol||'')+'/'+(causa.anio||'');
+    document.getElementById('editRija').value = causa.rija || '';
+    document.getElementById('editFechaSuspension').value = causa.fechaSuspension || '';
+    document.getElementById('editDiasSuspension').value = causa.diasSuspension || '';
+    document.getElementById('editComentarios').value = causa.comentarios || '';
+    document.getElementById('editEstado').value = causa.estado || 'Disponible';
+    modalEditar.classList.remove('oculto');
+  }
+
+  function cerrarModalEditar(){ modalEditar.classList.add('oculto'); }
+
+  document.getElementById('btnCerrarModalEditar').addEventListener('click', cerrarModalEditar);
+  document.getElementById('btnCancelarEdicion').addEventListener('click', cerrarModalEditar);
+  modalEditar.addEventListener('click', function(e){ if(e.target===modalEditar) cerrarModalEditar(); });
+
+  document.getElementById('btnGuardarEdicion').addEventListener('click', function(){
+    var idFila = modalEditar.dataset.idFila;
+    var btn = this; btn.disabled = true; btn.textContent = 'Guardando...';
+    var cambios = {
+      rija: document.getElementById('editRija').value.trim(),
+      fechaSuspension: document.getElementById('editFechaSuspension').value.trim(),
+      diasSuspension: document.getElementById('editDiasSuspension').value.trim(),
+      comentarios: document.getElementById('editComentarios').value.trim(),
+      estado: document.getElementById('editEstado').value
+    };
+    llamarServicio({accion:'actualizarCausa', idFila: idFila, cambios: cambios}).then(function(){
+      return llamarServicio({accion:'listar'});
+    }).then(function(datos){
+      estado.causas = datos.causas;
+      actualizarResumenHeader(); renderStock(); renderReportesLocal();
+      cerrarModalEditar();
+    }).catch(mostrarErrorGlobal).finally(function(){ btn.disabled=false; btn.textContent='Guardar cambios'; });
   });
 
   /* ================= STAGING (preparar tabla) ================= */
