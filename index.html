@@ -19,6 +19,7 @@
   --acento:#D6336C; --fondo:#F7F8FA; --superficie:#FFFFFF;
   --texto:#1A1F2E; --texto-suave:#5B6478; --borde:#E2E6ED;
   --verde:#1E8E5A; --ambar:#D97E00; --rojo:#C0392B; --purpura:#7C4DA8; --gris:#6B7686;
+  --naranja:#B45309; --naranja-suave:#FBEBDA;
   --cian:#39C4D6;
   --e1:4px; --e2:8px; --e3:16px; --e4:24px; --e5:32px;
   --radio:10px; --sombra:0 1px 2px rgba(15,42,74,.06), 0 4px 16px rgba(15,42,74,.05);
@@ -179,6 +180,8 @@ table.datos th{background:var(--azul-claro);color:var(--azul-profundo);text-alig
 table.datos td{padding:9px 12px;border-bottom:1px solid var(--borde);white-space:nowrap;vertical-align:middle;}
 table.datos tr:hover td{background:#fafbfc;}
 tr.fila-pesca td{background:#e6f4ec!important;}
+tr.fila-rija td{background:var(--naranja-suave)!important;}
+tr.fila-vencida td{background:#f1e8f7!important;}
 tr.fila-duplicada td{background:#fdecea!important;}
 tr.fila-seleccionada td{background:#fff3f7!important;}
 
@@ -262,7 +265,7 @@ button.btn-enlace{background:none;border:none;color:var(--azul-medio);font-weigh
 button.btn-enlace:hover{color:var(--acento);}
 
 /* -------- toggle rápido RIJA en la tabla -------- */
-.chk-rija{width:18px;height:18px;accent-color:var(--acento);cursor:pointer;}
+.chk-rija{width:18px;height:18px;accent-color:var(--naranja);cursor:pointer;}
 tr.fila-clicable{cursor:pointer;}
 
 /* -------- edición rápida inline (COMPLEJIDAD / ESTADO) en la tabla -------- */
@@ -1171,13 +1174,25 @@ tr.fila-clicable{cursor:pointer;}
     }).catch(mostrarErrorGlobal).finally(function(){ btn.disabled=false; btn.textContent='🔄 Generar ranking'; });
   });
 
+  /** Prioridad visual de la fila en el Ranking: RIJA (naranja) > Pesca (verde) > vencida (lila).
+   *  Se basa en el texto de "motivos" que ya calcula el backend, sin inventar reglas nuevas. */
+  function claseFilaRanking(c){
+    var motivos = c.motivos || [];
+    if(motivos.some(function(m){ return m.indexOf('RIJA')>-1; })) return 'fila-rija';
+    if(esPesca(c)) return 'fila-pesca';
+    if(motivos.some(function(m){ return m.indexOf('vencida')>-1; })) return 'fila-vencida';
+    return '';
+  }
+
   function renderRanking(){
     var tbody = document.querySelector('#tablaRanking tbody');
     tbody.innerHTML = estado.ranking.map(function(c, i){
       var marcada = !!estado.seleccionStaging[c.idFila];
-      return '<tr class="'+(esPesca(c)?'fila-pesca ':'')+(marcada?'fila-seleccionada':'')+'">'+
+      var esSuspendidaVencida = c.estado === 'Suspendida Procedimiento';
+      return '<tr class="'+claseFilaRanking(c)+' '+(marcada?'fila-seleccionada':'')+'">'+
         '<td><input type="checkbox" data-id="'+c.idFila+'" class="chkRanking" '+(marcada?'checked':'')+'></td>'+
-        '<td>'+(i+1)+'</td><td>'+(c.rol||'')+'</td><td>'+(c.anio||'')+'</td><td>'+(c.libro||'')+'</td>'+celdaMateria(c)+
+        '<td>'+(i+1)+'</td><td>'+(c.rol||'')+(esSuspendidaVencida?' <span style="color:var(--purpura);font-size:10px;font-weight:700;">(Suspendida)</span>':'')+'</td>'+
+        '<td>'+(c.anio||'')+'</td><td>'+(c.libro||'')+'</td>'+celdaMateria(c)+
         '<td class="puntaje">'+c.puntaje+'</td><td class="motivos">'+(c.motivos||[]).join(' · ')+'</td>'+
         '<td>'+(c.fechaRelacion||'')+'</td></tr>';
     }).join('') || '<tr><td colspan="9" class="vacio">Presiona "Generar ranking" para calcular</td></tr>';
