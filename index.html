@@ -157,7 +157,15 @@ button.btn-peligro:hover{background:#f8d7d3;}
 button:disabled{opacity:.5;cursor:not-allowed;}
 
 input.buscador,select.filtro{padding:10px 12px;border:1px solid var(--borde);border-radius:8px;}
-input.buscador{min-width:220px;flex:1;}
+input.buscador{min-width:220px;flex:1;width:100%;}
+.buscador-cont{position:relative;flex:1;min-width:220px;display:flex;}
+.buscador-cont input.buscador{padding-right:32px;}
+.btn-limpiar-buscador{position:absolute;right:4px;top:50%;transform:translateY(-50%);
+  width:24px;height:24px;border:none;background:transparent;color:var(--texto-suave);
+  font-size:17px;line-height:1;border-radius:50%;cursor:pointer;display:none;
+  align-items:center;justify-content:center;}
+.btn-limpiar-buscador:hover{background:var(--azul-claro);color:var(--azul-profundo);}
+.buscador-cont.con-texto .btn-limpiar-buscador{display:flex;}
 
 /* -------- KPIs estilo borde de color -------- */
 .grid-kpi{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:var(--e3);margin-bottom:var(--e4);}
@@ -170,6 +178,7 @@ input.buscador{min-width:220px;flex:1;}
 .chip-filtro{display:inline-flex;align-items:center;gap:6px;background:var(--azul-claro);color:var(--azul-profundo);
   padding:6px 12px;border-radius:999px;font-size:12.5px;font-weight:600;margin-bottom:var(--e3);}
 .chip-filtro span.x{cursor:pointer;font-weight:700;}
+.contador-resultados{color:var(--texto-suave);font-size:12px;margin:0 0 var(--e2);}
 
 /* -------- tabla -------- */
 .contenedor-tabla{overflow-x:auto;border-radius:0 0 var(--radio) var(--radio);}
@@ -304,8 +313,8 @@ tr.fila-clicable{cursor:pointer;}
   @page{ size: landscape; margin: 10mm; }
   html,body{width:100%;height:auto;}
   body *{visibility:hidden;}
-  #areaImprimible, #areaImprimible *{visibility:visible;}
-  #areaImprimible{position:absolute;top:0;left:0;width:100%;max-width:100%;padding:0;margin:0;
+  .zona-imprimible, .zona-imprimible *{visibility:visible;}
+  .zona-imprimible{position:absolute;top:0;left:0;width:100%;max-width:100%;padding:0;margin:0;
     box-shadow:none;border:none;overflow:visible!important;}
   .no-imprimir{display:none!important;}
   .solo-impresion{display:block;margin-bottom:var(--e3);}
@@ -423,11 +432,17 @@ tr.fila-clicable{cursor:pointer;}
       <div class="tarjeta">
         <h2>Stock completo de causas</h2>
         <div class="fila-acciones">
-          <input class="buscador" id="buscadorStock" placeholder="Buscar por ROL, AÑO, LIBRO, MATERIA...">
+          <div class="buscador-cont">
+            <input class="buscador" id="buscadorStock" placeholder="Buscar por ROL, AÑO, LIBRO, MATERIA...">
+            <button type="button" class="btn-limpiar-buscador" id="btnLimpiarBuscadorStock" title="Limpiar búsqueda" aria-label="Limpiar búsqueda">×</button>
+          </div>
           <select class="filtro" id="filtroEstadoStock">
             <option value="">Todos los estados</option>
             <option>Disponible</option><option>En Trámite</option><option>En Tabla</option>
             <option>Suspendida Procedimiento</option><option>Desistida</option>
+          </select>
+          <select class="filtro" id="filtroLibroStock">
+            <option value="">Todos los libros</option>
           </select>
           <button class="btn btn-secundario" id="btnDuplicados">🔴 Ver duplicados</button>
           <button class="btn btn-secundario" id="btnActualizarMaterias">🔗 Actualizar materias desde Stock</button>
@@ -457,7 +472,7 @@ tr.fila-clicable{cursor:pointer;}
           <button class="btn btn-primario" id="btnConfirmarTraspaso">Confirmar y marcar "En Tabla"</button>
           <button class="btn btn-peligro" id="btnLimpiarTraspaso">Vaciar selección</button>
         </div>
-        <div class="contenedor-tabla" id="areaImprimible">
+        <div class="contenedor-tabla zona-imprimible" id="areaImprimible">
           <div class="solo-impresion">
             <h2>Traspaso a SITCORTE — Corte de Apelaciones</h2>
             <p id="fechaImpresionTraspaso"></p>
@@ -479,7 +494,12 @@ tr.fila-clicable{cursor:pointer;}
             <h2>Dashboard de avance y cumplimiento</h2>
             <p class="subt" style="margin:0;">Toca cualquier indicador o gráfico para filtrar el detalle — todo se recalcula al instante, sin recargar la página.</p>
           </div>
-          <button class="btn btn-secundario" id="btnActualizarDashboard">↻ Actualizar</button>
+          <div class="fila-acciones" style="margin:0;">
+            <select class="filtro" id="filtroLibroDashboard">
+              <option value="">Todos los libros</option>
+            </select>
+            <button class="btn btn-secundario" id="btnActualizarDashboard">↻ Actualizar</button>
+          </div>
         </div>
         <div class="grid-kpi" id="kpisDashboard"></div>
       </div>
@@ -516,8 +536,24 @@ tr.fila-clicable{cursor:pointer;}
       <div class="tarjeta">
         <h2>Resumen general</h2>
         <div class="grid-kpi" id="kpisEstado"></div>
+        <div class="fila-acciones no-imprimir">
+          <div class="buscador-cont">
+            <input class="buscador" id="buscadorReportes" placeholder="Buscar por ROL, AÑO, LIBRO, MATERIA...">
+            <button type="button" class="btn-limpiar-buscador" id="btnLimpiarBuscadorReportes" title="Limpiar búsqueda" aria-label="Limpiar búsqueda">×</button>
+          </div>
+          <select class="filtro" id="filtroLibroReportes">
+            <option value="">Todos los libros</option>
+          </select>
+          <button class="btn btn-secundario" id="btnExportarExcelReportes">📊 Exportar Excel</button>
+          <button class="btn btn-secundario" id="btnExportarPdfReportes">🖨 Exportar PDF</button>
+        </div>
         <div id="chipFiltroReportes"></div>
-        <div class="contenedor-tabla">
+        <p class="contador-resultados no-imprimir" id="contadorReportes"></p>
+        <div class="contenedor-tabla zona-imprimible" id="areaImprimibleReportes">
+          <div class="solo-impresion">
+            <h2>Reporte de causas — Corte de Apelaciones</h2>
+            <p id="fechaImpresionReportes"></p>
+          </div>
           <table class="datos" id="tablaReportes">
             <thead><tr><th>ROL</th><th>AÑO</th><th>LIBRO</th><th>MATERIA</th><th>TIPO</th><th>ESTADO</th><th>FECHA RELACIÓN</th></tr></thead>
             <tbody></tbody>
@@ -821,6 +857,9 @@ tr.fila-clicable{cursor:pointer;}
     llamarServicio({accion:'listar'}).then(function(datos){
       estado.causas = datos.causas;
       estado.config = datos.config;
+      poblarFiltroLibro(document.getElementById('filtroLibroStock'), estado.causas);
+      poblarFiltroLibro(document.getElementById('filtroLibroDashboard'), estado.causas);
+      poblarFiltroLibro(document.getElementById('filtroLibroReportes'), estado.causas);
       actualizarResumenHeader();
       renderReportesLocal();
       renderStock();
@@ -891,6 +930,65 @@ tr.fila-clicable{cursor:pointer;}
     'Suspendida Procedimiento':'var(--purpura)','Desistida':'var(--rojo)'
   };
 
+  /** Combina el filtro por estado (clic en KPI) con la búsqueda de texto y el
+   *  filtro de LIBRO propios de esta pantalla. Se reutiliza para pintar la
+   *  tabla y para las exportaciones (que no se limitan a las 300 filas visibles). */
+  function causasFiltradasReportes(causas){
+    var texto = (document.getElementById('buscadorReportes').value||'').toLowerCase();
+    var libro = document.getElementById('filtroLibroReportes').value;
+    return causas.filter(function(c){
+      if(estado.filtroReportes && c.estado!==estado.filtroReportes) return false;
+      if(libro && String(c.libro||'').trim()!==libro) return false;
+      if(!texto) return true;
+      var pack = [c.rol,c.anio,c.libro,c.materia,c.tipo].join(' ').toLowerCase();
+      return pack.indexOf(texto) > -1;
+    });
+  }
+
+  /** Exporta a CSV (se abre directo en Excel) el listado que está filtrado
+   *  en pantalla — completo, no solo las 300 filas que se muestran. */
+  function exportarExcelReportes(){
+    var causas = causasFiltradasReportes(estado.causas);
+    var encabezados = ['ROL','AÑO','LIBRO','MATERIA','TIPO','ESTADO','FECHA RELACIÓN'];
+    var filas = causas.map(function(c){
+      return [c.rol, c.anio, c.libro, materiaLimpia(c.materia), c.tipo, c.estado, c.fechaRelacion];
+    });
+    var csv = [encabezados].concat(filas).map(function(fila){
+      return fila.map(function(v){
+        var s = String(v==null?'':v).replace(/"/g,'""');
+        return /[";\n]/.test(s) ? '"'+s+'"' : s;
+      }).join(';');
+    }).join('\r\n');
+    var blob = new Blob(['﻿'+csv], {type:'text/csv;charset=utf-8;'});
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = 'reporte_causas_'+new Date().toISOString().slice(0,10)+'.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  /** Exporta a PDF vía el diálogo de impresión del navegador: vuelca temporalmente
+   *  el listado COMPLETO filtrado (no las 300 filas de pantalla) al área imprimible,
+   *  imprime, y al cerrar el diálogo restaura la vista normal. */
+  function exportarPdfReportes(){
+    var completo = causasFiltradasReportes(estado.causas);
+    document.getElementById('fechaImpresionReportes').textContent =
+      'Generado el '+new Date().toLocaleString('es-CL')+' · '+completo.length+' causa(s)';
+    var tbody = document.querySelector('#tablaReportes tbody');
+    tbody.innerHTML = completo.map(function(c){
+      return '<tr><td>'+(c.rol||'')+'</td><td>'+(c.anio||'')+'</td><td>'+(c.libro||'')+'</td>'+celdaMateria(c)+
+        '<td>'+(c.tipo||'')+'</td><td>'+chipEstado(c.estado)+'</td><td>'+(c.fechaRelacion||'')+'</td></tr>';
+    }).join('') || '<tr><td colspan="7" class="vacio">Sin resultados</td></tr>';
+    window.print();
+    window.addEventListener('afterprint', function restaurar(){
+      window.removeEventListener('afterprint', restaurar);
+      renderReportesLocal();
+    });
+  }
+
   function renderReportesLocal(){
     var causas = estado.causas;
     var porEstado = {};
@@ -929,7 +1027,10 @@ tr.fila-clicable{cursor:pointer;}
       chipCont.appendChild(chip);
     }
 
-    var filtradas = estado.filtroReportes ? causas.filter(function(c){return c.estado===estado.filtroReportes;}) : causas;
+    var filtradas = causasFiltradasReportes(causas);
+    document.getElementById('contadorReportes').textContent = filtradas.length > 300
+      ? 'Mostrando 300 de '+filtradas.length+' causa(s) — usa "Exportar" para llevarte el listado completo.'
+      : filtradas.length+' causa(s)';
     var tbody = document.querySelector('#tablaReportes tbody');
     tbody.innerHTML = filtradas.slice(0,300).map(function(c){
       return '<tr class="'+(esPesca(c)?'fila-pesca':'')+'"><td>'+(c.rol||'')+'</td><td>'+(c.anio||'')+'</td><td>'+(c.libro||'')+'</td>'+celdaMateria(c)+
@@ -952,6 +1053,21 @@ tr.fila-clicable{cursor:pointer;}
     pintarConteo('tablaMateria', porMateria);
     pintarConteo('tablaTipo', porTipo);
   }
+
+  document.getElementById('buscadorReportes').addEventListener('input', function(){
+    actualizarBotonLimpiarBuscador(this);
+    renderReportesLocal();
+  });
+  document.getElementById('btnLimpiarBuscadorReportes').addEventListener('click', function(){
+    var input = document.getElementById('buscadorReportes');
+    input.value = '';
+    actualizarBotonLimpiarBuscador(input);
+    input.focus();
+    renderReportesLocal();
+  });
+  document.getElementById('filtroLibroReportes').addEventListener('change', renderReportesLocal);
+  document.getElementById('btnExportarExcelReportes').addEventListener('click', exportarExcelReportes);
+  document.getElementById('btnExportarPdfReportes').addEventListener('click', exportarPdfReportes);
 
   /* ================= DASHBOARD (avance y cumplimiento) ================= */
   var PENDIENTES_ESTADOS = {'Disponible':1, 'En Trámite':1, 'Suspendida Procedimiento':1};
@@ -991,7 +1107,8 @@ tr.fila-clicable{cursor:pointer;}
 
   function renderDashboard(){
     if(!document.getElementById('kpisDashboard')) return;
-    var causas = estado.causas;
+    var libroElegido = document.getElementById('filtroLibroDashboard').value;
+    var causas = libroElegido ? estado.causas.filter(function(c){ return String(c.libro||'').trim()===libroElegido; }) : estado.causas;
     var total = causas.length;
     var porEstado = {};
     causas.forEach(function(c){ var e=c.estado||'Sin estado'; porEstado[e]=(porEstado[e]||0)+1; });
@@ -1161,6 +1278,10 @@ tr.fila-clicable{cursor:pointer;}
     cargarTodo();
     setTimeout(function(){ btn.disabled=false; }, 600);
   });
+  document.getElementById('filtroLibroDashboard').addEventListener('change', function(){
+    filtroDashboard = null; // el filtro de libro es la base; se limpia el filtro por clic para no combinar cosas raras
+    renderDashboard();
+  });
 
   /* ================= RANKING ================= */
   document.getElementById('btnGenerarRanking').addEventListener('click', function(){
@@ -1207,11 +1328,28 @@ tr.fila-clicable{cursor:pointer;}
   }
 
   /* ================= STOCK ================= */
+
+  /** Recalcula las opciones de un <select> de LIBRO a partir de los valores reales
+   *  presentes en los datos (no una lista fija), preservando la selección actual. */
+  function poblarFiltroLibro(selectEl, causas){
+    var valorActual = selectEl.value;
+    var libros = Array.prototype.reduce.call(causas, function(acc, c){
+      var l = String(c.libro||'').trim();
+      if(l && acc.indexOf(l)===-1) acc.push(l);
+      return acc;
+    }, []).sort(function(a,b){ return a.localeCompare(b, 'es'); });
+    selectEl.innerHTML = '<option value="">Todos los libros</option>' +
+      libros.map(function(l){ return '<option value="'+escaparAtributo(l)+'">'+l+'</option>'; }).join('');
+    if(libros.indexOf(valorActual) > -1) selectEl.value = valorActual;
+  }
+
   function causasFiltradas(){
     var texto = (document.getElementById('buscadorStock').value||'').toLowerCase();
     var filtroEstado = document.getElementById('filtroEstadoStock').value;
+    var filtroLibro = document.getElementById('filtroLibroStock').value;
     return estado.causas.filter(function(c){
       if(filtroEstado && c.estado!==filtroEstado) return false;
+      if(filtroLibro && String(c.libro||'').trim()!==filtroLibro) return false;
       if(!texto) return true;
       var pack = [c.rol,c.anio,c.libro,c.materia,c.tipo].join(' ').toLowerCase();
       return pack.indexOf(texto) > -1;
@@ -1343,11 +1481,30 @@ tr.fila-clicable{cursor:pointer;}
     });
   }
 
-  document.getElementById('buscadorStock').addEventListener('input', renderStock);
+  /** Muestra/oculta el botón "×" de un buscador según tenga texto o no. */
+  function actualizarBotonLimpiarBuscador(inputEl){
+    inputEl.closest('.buscador-cont').classList.toggle('con-texto', !!inputEl.value);
+  }
+
+  document.getElementById('buscadorStock').addEventListener('input', function(){
+    actualizarBotonLimpiarBuscador(this);
+    renderStock();
+  });
+  document.getElementById('btnLimpiarBuscadorStock').addEventListener('click', function(){
+    var input = document.getElementById('buscadorStock');
+    input.value = '';
+    actualizarBotonLimpiarBuscador(input);
+    input.focus();
+    renderStock();
+  });
   document.getElementById('filtroEstadoStock').addEventListener('change', renderStock);
+  document.getElementById('filtroLibroStock').addEventListener('change', renderStock);
   document.getElementById('btnLimpiarFiltrosStock').addEventListener('click', function(){
-    document.getElementById('buscadorStock').value='';
+    var input = document.getElementById('buscadorStock');
+    input.value='';
+    actualizarBotonLimpiarBuscador(input);
     document.getElementById('filtroEstadoStock').value='';
+    document.getElementById('filtroLibroStock').value='';
     soloDuplicados=false;
     document.getElementById('btnDuplicados').textContent='🔴 Ver duplicados';
     renderStock();
