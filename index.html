@@ -147,7 +147,7 @@ main{padding:0 var(--e4);}
 .fila-acciones{display:flex;gap:var(--e2);flex-wrap:wrap;align-items:center;margin-bottom:var(--e3);}
 
 button.btn{border:none;border-radius:8px;padding:10px 16px;font-weight:600;font-size:13px;
-  transition:var(--transicion);}
+  transition:var(--transicion);display:inline-flex;align-items:center;gap:7px;}
 button.btn-primario{background:var(--acento);color:#fff;}
 button.btn-primario:hover{filter:brightness(1.08);}
 button.btn-secundario{background:var(--azul-claro);color:var(--azul-profundo);}
@@ -155,6 +155,9 @@ button.btn-secundario:hover{background:#dbe6f2;}
 button.btn-peligro{background:#fceceb;color:var(--rojo);}
 button.btn-peligro:hover{background:#f8d7d3;}
 button:disabled{opacity:.5;cursor:not-allowed;}
+.btn .icono-btn{width:15px;height:15px;flex:none;}
+button.btn-header{display:inline-flex;align-items:center;gap:6px;}
+button.btn-header .icono-btn{width:14px;height:14px;flex:none;}
 
 input.buscador,select.filtro{padding:10px 12px;border:1px solid var(--borde);border-radius:8px;}
 input.buscador{min-width:220px;flex:1;width:100%;}
@@ -175,6 +178,10 @@ input.buscador{min-width:220px;flex:1;width:100%;}
 .kpi.activo{box-shadow:0 0 0 2px rgba(214,51,108,.18);}
 .kpi .num{font-size:26px;font-weight:700;color:var(--texto);}
 .kpi .lbl{font-size:12px;color:var(--texto-suave);margin-top:2px;}
+.kpi .tendencia{display:block;font-size:10.5px;font-weight:600;margin-top:5px;}
+.tendencia-positiva{color:var(--verde);}
+.tendencia-negativa{color:var(--rojo);}
+.tendencia-neutra{color:var(--texto-suave);}
 .chip-filtro{display:inline-flex;align-items:center;gap:6px;background:var(--azul-claro);color:var(--azul-profundo);
   padding:6px 12px;border-radius:999px;font-size:12.5px;font-weight:600;margin-bottom:var(--e3);}
 .chip-filtro span.x{cursor:pointer;font-weight:700;}
@@ -230,7 +237,34 @@ textarea.paste{width:100%;min-height:140px;padding:var(--e3);border:1px solid va
 
 .aviso{background:#fdf3e3;border:1px solid #f5d999;color:#7a5200;border-radius:8px;padding:var(--e2) var(--e3);
   font-size:12.5px;margin-bottom:var(--e3);}
-.vacio{color:var(--texto-suave);font-size:13px;padding:var(--e4);text-align:center;}
+.vacio{color:var(--texto-suave);font-size:13px;padding:var(--e5) var(--e4);text-align:center;}
+.vacio-icono{width:34px;height:34px;margin:0 auto 10px;color:var(--borde);display:block;}
+.vacio-titulo{font-weight:600;color:var(--texto-suave);margin-bottom:2px;}
+.vacio-sub{font-size:12px;color:#9aa4b4;}
+
+/* -------- toasts (reemplazan alert()) -------- */
+.toast-cont{position:fixed;top:20px;right:20px;z-index:400;display:flex;flex-direction:column;
+  gap:10px;max-width:360px;pointer-events:none;}
+.toast{background:var(--superficie);border-left:4px solid var(--azul-medio);border-radius:8px;
+  box-shadow:0 12px 32px rgba(15,42,74,.2);padding:13px 16px;display:flex;align-items:flex-start;gap:10px;
+  font-size:13px;color:var(--texto);opacity:0;transform:translateX(24px);
+  transition:opacity .25s ease,transform .25s ease;pointer-events:auto;}
+.toast.mostrado{opacity:1;transform:translateX(0);}
+.toast svg{width:18px;height:18px;flex:none;margin-top:1px;}
+.toast-exito{border-left-color:var(--verde);}
+.toast-exito svg{color:var(--verde);}
+.toast-error{border-left-color:var(--rojo);}
+.toast-error svg{color:var(--rojo);}
+.toast-info{border-left-color:var(--azul-medio);}
+.toast-info svg{color:var(--azul-medio);}
+@media (max-width:600px){ .toast-cont{left:12px;right:12px;top:12px;max-width:none;} }
+
+/* -------- skeleton de carga -------- */
+.fila-esqueleto td{padding:12px 10px;}
+.barra-esqueleto{height:12px;border-radius:6px;
+  background:linear-gradient(90deg,#eef1f5 25%,#e2e7ee 37%,#eef1f5 63%);
+  background-size:400% 100%;animation:brilloEsqueleto 1.4s ease infinite;}
+@keyframes brilloEsqueleto{0%{background-position:100% 0;}100%{background-position:0 0;}}
 
 /* -------- panel lateral (drawer) de edición de causa -------- */
 .drawer-fondo{position:fixed;inset:0;background:rgba(15,42,74,.45);z-index:200;opacity:0;
@@ -369,8 +403,8 @@ tr.fila-clicable{cursor:pointer;}
     </div>
     <div class="acciones-header">
       <span class="estado-servicio"><span class="punto"></span><span id="horaActualizado">—</span></span>
-      <button class="btn-header" id="btnActualizarTodo">↻ Actualizar</button>
-      <button class="btn-header" id="btnAbrirConfig">⚙ Configuración</button>
+      <button class="btn-header" id="btnActualizarTodo"><svg class="icono-btn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 4v5h-5"/></svg> Actualizar</button>
+      <button class="btn-header" id="btnAbrirConfig"><svg class="icono-btn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1 1.55V21a2 2 0 0 1-4 0v-.09a1.7 1.7 0 0 0-1-1.55 1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.7 1.7 0 0 0 .34-1.87 1.7 1.7 0 0 0-1.55-1H3a2 2 0 0 1 0-4h.09a1.7 1.7 0 0 0 1.55-1 1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.7 1.7 0 0 0 1.87.34H9a1.7 1.7 0 0 0 1-1.55V3a2 2 0 0 1 4 0v.09a1.7 1.7 0 0 0 1 1.55 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.7 1.7 0 0 0-.34 1.87V9a1.7 1.7 0 0 0 1.55 1H21a2 2 0 0 1 0 4h-.09a1.7 1.7 0 0 0-1.55 1z"/></svg> Configuración</button>
     </div>
   </header>
 
@@ -415,7 +449,7 @@ tr.fila-clicable{cursor:pointer;}
         <h2>Ranking de causas disponibles</h2>
         <p class="subt">Prioridad: RIJA · Pesca y Acuicultura · Suspensión vencida · Libro (según Configuración) · Fecha Relación más antigua.</p>
         <div class="fila-acciones">
-          <button class="btn btn-primario" id="btnGenerarRanking">🔄 Generar ranking</button>
+          <button class="btn btn-primario" id="btnGenerarRanking"><svg class="icono-btn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 4v5h-5"/></svg> Generar ranking</button>
           <span id="infoRanking" style="color:var(--texto-suave);font-size:12.5px;"></span>
         </div>
         <div class="contenedor-tabla">
@@ -444,8 +478,8 @@ tr.fila-clicable{cursor:pointer;}
           <select class="filtro" id="filtroLibroStock">
             <option value="">Todos los libros</option>
           </select>
-          <button class="btn btn-secundario" id="btnDuplicados">🔴 Ver duplicados</button>
-          <button class="btn btn-secundario" id="btnActualizarMaterias">🔗 Actualizar materias desde Stock</button>
+          <button class="btn btn-secundario" id="btnDuplicados"></button>
+          <button class="btn btn-secundario" id="btnActualizarMaterias"><svg class="icono-btn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.07 0l1.93-1.93a5 5 0 0 0-7.07-7.07L10.5 5.5"/><path d="M14 11a5 5 0 0 0-7.07 0L5 12.93a5 5 0 0 0 7.07 7.07l1.43-1.43"/></svg> Actualizar materias desde Stock</button>
           <button class="btn btn-secundario" id="btnLimpiarFiltrosStock">Limpiar</button>
         </div>
         <div class="contenedor-tabla">
@@ -468,7 +502,7 @@ tr.fila-clicable{cursor:pointer;}
         <b>Confirmar y marcar "En Tabla"</b> sí escribe en la planilla: cambia el Estado de cada causa seleccionada a "En Tabla" — hazlo solo cuando ya terminaste el traspaso real a SITCORTE.</p>
         <div class="fila-acciones no-imprimir">
           <span class="contador-traspaso" id="contadorTraspaso">0 causa(s) seleccionada(s)</span>
-          <button class="btn btn-secundario" id="btnImprimirTraspaso">🖨 Imprimir</button>
+          <button class="btn btn-secundario" id="btnImprimirTraspaso"><svg class="icono-btn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V3h12v6"/><rect x="4" y="9" width="16" height="8" rx="1.5"/><path d="M6 17v4h12v-4"/></svg> Imprimir</button>
           <button class="btn btn-primario" id="btnConfirmarTraspaso">Confirmar y marcar "En Tabla"</button>
           <button class="btn btn-peligro" id="btnLimpiarTraspaso">Vaciar selección</button>
         </div>
@@ -498,7 +532,7 @@ tr.fila-clicable{cursor:pointer;}
             <select class="filtro" id="filtroLibroDashboard">
               <option value="">Todos los libros</option>
             </select>
-            <button class="btn btn-secundario" id="btnActualizarDashboard">↻ Actualizar</button>
+            <button class="btn btn-secundario" id="btnActualizarDashboard"><svg class="icono-btn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 4v5h-5"/></svg> Actualizar</button>
           </div>
         </div>
         <div class="grid-kpi" id="kpisDashboard"></div>
@@ -544,8 +578,8 @@ tr.fila-clicable{cursor:pointer;}
           <select class="filtro" id="filtroLibroReportes">
             <option value="">Todos los libros</option>
           </select>
-          <button class="btn btn-secundario" id="btnExportarExcelReportes">📊 Exportar Excel</button>
-          <button class="btn btn-secundario" id="btnExportarPdfReportes">🖨 Exportar PDF</button>
+          <button class="btn btn-secundario" id="btnExportarExcelReportes"><svg class="icono-btn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg> Exportar Excel</button>
+          <button class="btn btn-secundario" id="btnExportarPdfReportes"><svg class="icono-btn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V3h12v6"/><rect x="4" y="9" width="16" height="8" rx="1.5"/><path d="M6 17v4h12v-4"/></svg> Exportar PDF</button>
         </div>
         <div id="chipFiltroReportes"></div>
         <p class="contador-resultados no-imprimir" id="contadorReportes"></p>
@@ -686,6 +720,19 @@ tr.fila-clicable{cursor:pointer;}
   </div>
 </div>
 
+<div id="modalConfirmar" class="popup-fondo oculto">
+  <div class="popup-caja">
+    <h3 id="confirmTitulo">Confirmar acción</h3>
+    <p class="subt" id="confirmMensaje" style="white-space:pre-line;"></p>
+    <div class="popup-acciones">
+      <button class="btn btn-secundario" id="btnConfirmarAccionCancelar">Cancelar</button>
+      <button class="btn btn-primario" id="btnConfirmarAccionOk">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<div id="toastCont" class="toast-cont" aria-live="polite"></div>
+
 <script>
 /* Chart.js v4.4.4 (UMD) incrustado localmente — la red institucional bloquea CDNs externos */
 /**
@@ -715,6 +762,18 @@ tr.fila-clicable{cursor:pointer;}
   "use strict";
 
   var LIBROS_DISPONIBLES = ['Laboral - Cobranza','Familia','Civil','Tributario Y Aduanero','Policia Local','Contencioso Administrativo','Penal','(Ninguno)'];
+
+  /** Set de íconos SVG en línea (sobrios, un solo color) para reemplazar los
+   *  emojis en botones — más profesional y consistente en cualquier sistema. */
+  var ICONOS = {
+    duplicado: '<svg class="icono-btn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M4 16V6a2 2 0 0 1 2-2h10"/></svg>',
+    quitarFiltro: '<svg class="icono-btn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5l5 5M14.5 9.5l-5 5"/></svg>',
+    enlace: '<svg class="icono-btn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.07 0l1.93-1.93a5 5 0 0 0-7.07-7.07L10.5 5.5"/><path d="M14 11a5 5 0 0 0-7.07 0L5 12.93a5 5 0 0 0 7.07 7.07l1.43-1.43"/></svg>',
+    excel: '<svg class="icono-btn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg>',
+    imprimir: '<svg class="icono-btn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V3h12v6"/><rect x="4" y="9" width="16" height="8" rx="1.5"/><path d="M6 17v4h12v-4"/></svg>',
+    refrescar: '<svg class="icono-btn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 4v5h-5"/></svg>',
+    engranaje: '<svg class="icono-btn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1 1.55V21a2 2 0 0 1-4 0v-.09a1.7 1.7 0 0 0-1-1.55 1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.7 1.7 0 0 0 .34-1.87 1.7 1.7 0 0 0-1.55-1H3a2 2 0 0 1 0-4h.09a1.7 1.7 0 0 0 1.55-1 1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.7 1.7 0 0 0 1.87.34H9a1.7 1.7 0 0 0 1-1.55V3a2 2 0 0 1 4 0v.09a1.7 1.7 0 0 0 1 1.55 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.7 1.7 0 0 0-.34 1.87V9a1.7 1.7 0 0 0 1.55 1H21a2 2 0 0 1 0 4h-.09a1.7 1.7 0 0 0-1.55 1z"/></svg>'
+  };
 
   var ICONOS_ETAPA = {
     stock: '<svg class="icono-tarjeta" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="5" rx="1"/><rect x="3" y="10" width="18" height="5" rx="1"/><rect x="3" y="17" width="12" height="4" rx="1"/></svg>',
@@ -853,10 +912,22 @@ tr.fila-clicable{cursor:pointer;}
   document.getElementById('btnActualizarTodo').addEventListener('click', cargarTodo);
 
   /* ---------------- carga inicial ---------------- */
+  /** Filas grises "brillando" mientras llegan los datos reales — se ve más
+   *  profesional que dejar la tabla en blanco un instante. */
+  function mostrarEsqueletoTabla(selectorTbody, columnas, filas){
+    var tbody = document.querySelector(selectorTbody);
+    if(!tbody) return;
+    var celda = '<td><div class="barra-esqueleto"></div></td>';
+    var fila = '<tr class="fila-esqueleto">'+new Array(columnas).fill(celda).join('')+'</tr>';
+    tbody.innerHTML = new Array(filas||6).fill(fila).join('');
+  }
+
   function cargarTodo(){
+    mostrarEsqueletoTabla('#tablaStock tbody', 14, 8);
     llamarServicio({accion:'listar'}).then(function(datos){
       estado.causas = datos.causas;
       estado.config = datos.config;
+      actualizarSnapshotDashboard(estado.causas);
       poblarFiltroLibro(document.getElementById('filtroLibroStock'), estado.causas);
       poblarFiltroLibro(document.getElementById('filtroLibroDashboard'), estado.causas);
       poblarFiltroLibro(document.getElementById('filtroLibroReportes'), estado.causas);
@@ -881,7 +952,50 @@ tr.fila-clicable{cursor:pointer;}
   function mostrarErrorGlobal(err){
     console.error(err);
     document.getElementById('resumenHeader').textContent = 'Error: '+err.message;
+    mostrarToast(err.message || 'Ocurrió un error inesperado.', 'error');
   }
+
+  /* ---------------- toasts (reemplazan alert()) ---------------- */
+  var ICONOS_TOAST = {
+    exito: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>',
+    error: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>',
+    info: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg>'
+  };
+  function mostrarToast(mensaje, tipo){
+    tipo = (tipo==='exito'||tipo==='error') ? tipo : 'info';
+    var cont = document.getElementById('toastCont');
+    var t = document.createElement('div');
+    t.className = 'toast toast-'+tipo;
+    t.innerHTML = ICONOS_TOAST[tipo] + '<span>'+escaparAtributo(mensaje)+'</span>';
+    cont.appendChild(t);
+    requestAnimationFrame(function(){ t.classList.add('mostrado'); });
+    setTimeout(function(){
+      t.classList.remove('mostrado');
+      setTimeout(function(){ t.remove(); }, 260);
+    }, 4200);
+  }
+
+  /* ---------------- confirmación propia (reemplaza confirm()) ---------------- */
+  var confirmResolver = null;
+  var modalConfirmar = document.getElementById('modalConfirmar');
+  function confirmarAccion(mensaje, opciones){
+    opciones = opciones || {};
+    document.getElementById('confirmTitulo').textContent = opciones.titulo || 'Confirmar acción';
+    document.getElementById('confirmMensaje').textContent = mensaje;
+    var btnOk = document.getElementById('btnConfirmarAccionOk');
+    btnOk.textContent = opciones.textoOk || 'Confirmar';
+    btnOk.className = 'btn ' + (opciones.peligro ? 'btn-peligro' : 'btn-primario');
+    modalConfirmar.classList.remove('oculto');
+    return new Promise(function(resolve){ confirmResolver = resolve; });
+  }
+  function resolverConfirmar(valor){
+    modalConfirmar.classList.add('oculto');
+    var r = confirmResolver; confirmResolver = null;
+    if(r) r(valor);
+  }
+  document.getElementById('btnConfirmarAccionOk').addEventListener('click', function(){ resolverConfirmar(true); });
+  document.getElementById('btnConfirmarAccionCancelar').addEventListener('click', function(){ resolverConfirmar(false); });
+  modalConfirmar.addEventListener('click', function(e){ if(e.target===modalConfirmar) resolverConfirmar(false); });
 
   /* ---------------- helpers de formato ---------------- */
   function chipEstado(estadoTxt){
@@ -891,6 +1005,15 @@ tr.fila-clicable{cursor:pointer;}
     };
     var clase = map[estadoTxt] || 'chip-tramite';
     return '<span class="chip '+clase+'">'+(estadoTxt||'—')+'</span>';
+  }
+
+  var ICONO_VACIO_BUSCAR = '<svg class="vacio-icono" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>';
+  var ICONO_VACIO_LISTA = '<svg class="vacio-icono" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 9h10M7 13h6"/></svg>';
+
+  /** Fila "sin resultados" con ícono + mensaje cercano, en vez de un texto plano. */
+  function filaVacia(colspan, titulo, sub, icono){
+    return '<tr><td colspan="'+colspan+'" class="vacio">'+(icono||ICONO_VACIO_BUSCAR)+
+      '<div class="vacio-titulo">'+titulo+'</div>'+(sub?'<div class="vacio-sub">'+sub+'</div>':'')+'</td></tr>';
   }
 
   function claveDup(c){ return String(c.rol)+'|'+String(c.anio)+'|'+String(c.libro||'').trim().toUpperCase(); }
@@ -981,7 +1104,7 @@ tr.fila-clicable{cursor:pointer;}
     tbody.innerHTML = completo.map(function(c){
       return '<tr><td>'+(c.rol||'')+'</td><td>'+(c.anio||'')+'</td><td>'+(c.libro||'')+'</td>'+celdaMateria(c)+
         '<td>'+(c.tipo||'')+'</td><td>'+chipEstado(c.estado)+'</td><td>'+(c.fechaRelacion||'')+'</td></tr>';
-    }).join('') || '<tr><td colspan="7" class="vacio">Sin resultados</td></tr>';
+    }).join('') || filaVacia(7, 'No hay causas para exportar', 'Ajusta los filtros antes de exportar.');
     window.print();
     window.addEventListener('afterprint', function restaurar(){
       window.removeEventListener('afterprint', restaurar);
@@ -1035,7 +1158,7 @@ tr.fila-clicable{cursor:pointer;}
     tbody.innerHTML = filtradas.slice(0,300).map(function(c){
       return '<tr class="'+(esPesca(c)?'fila-pesca':'')+'"><td>'+(c.rol||'')+'</td><td>'+(c.anio||'')+'</td><td>'+(c.libro||'')+'</td>'+celdaMateria(c)+
         '<td>'+(c.tipo||'')+'</td><td>'+chipEstado(c.estado)+'</td><td>'+(c.fechaRelacion||'')+'</td></tr>';
-    }).join('') || '<tr><td colspan="7" class="vacio">Sin resultados</td></tr>';
+    }).join('') || filaVacia(7, 'No encontramos causas con ese filtro', 'Prueba ajustando la búsqueda, el libro o el estado.');
 
     var pendientesEstados = {'Disponible':1,'En Trámite':1,'Suspendida Procedimiento':1};
     var porMateria={}, porTipo={};
@@ -1072,6 +1195,58 @@ tr.fila-clicable{cursor:pointer;}
   /* ================= DASHBOARD (avance y cumplimiento) ================= */
   var PENDIENTES_ESTADOS = {'Disponible':1, 'En Trámite':1, 'Suspendida Procedimiento':1};
   var filtroDashboard = null; // {tipo, valor, etiqueta} | null
+  var deltaDashboard = null; // {total, disponibles, enTabla, cumplimiento} vs. la visita anterior, o null la primera vez
+
+  /** Cuenta ascendente/descendente animada para que los KPI se sientan "vivos". */
+  function animarNumero(el, valorFinal, sufijo){
+    if(isNaN(valorFinal)){ el.textContent = valorFinal+(sufijo||''); return; }
+    var duracion = 650, t0 = null;
+    function paso(ts){
+      if(!t0) t0 = ts;
+      var progreso = Math.min((ts-t0)/duracion, 1);
+      var suavizado = 1-Math.pow(1-progreso, 3);
+      el.textContent = Math.round(valorFinal*suavizado)+(sufijo||'');
+      if(progreso<1) requestAnimationFrame(paso);
+    }
+    requestAnimationFrame(paso);
+  }
+
+  function badgeTendenciaNeutral(delta){
+    if(delta===undefined || delta===null) return '';
+    if(delta===0) return '<span class="tendencia tendencia-neutra">Igual que la última visita</span>';
+    return '<span class="tendencia tendencia-neutra">'+(delta>0?'▲':'▼')+' '+Math.abs(delta)+' vs. última visita</span>';
+  }
+  function badgeTendenciaCumplimiento(delta){
+    if(delta===undefined || delta===null) return '';
+    if(delta===0) return '<span class="tendencia tendencia-neutra">Igual que la última visita</span>';
+    var positivo = delta>0;
+    return '<span class="tendencia '+(positivo?'tendencia-positiva':'tendencia-negativa')+'">'+(positivo?'▲':'▼')+' '+Math.abs(delta)+' pts vs. última visita</span>';
+  }
+
+  /** Guarda una "foto" de los indicadores clave en localStorage para poder mostrar
+   *  la tendencia (▲/▼) la próxima vez que alguien entre — no depende del backend. */
+  function actualizarSnapshotDashboard(causas){
+    var total = causas.length;
+    var porEstado = {};
+    causas.forEach(function(c){ var e=c.estado||'Sin estado'; porEstado[e]=(porEstado[e]||0)+1; });
+    var disponibles = porEstado['Disponible']||0;
+    var enTabla = porEstado['En Tabla']||0;
+    var desistidas = porEstado['Desistida']||0;
+    var cumplimiento = total ? Math.round((enTabla+desistidas)/total*100) : 0;
+    var actual = { total:total, disponibles:disponibles, enTabla:enTabla, cumplimiento:cumplimiento };
+    deltaDashboard = null;
+    try {
+      var anteriorRaw = localStorage.getItem('stockCausas.snapshotDashboard');
+      if(anteriorRaw){
+        var anterior = JSON.parse(anteriorRaw);
+        deltaDashboard = {
+          total: actual.total-anterior.total, disponibles: actual.disponibles-anterior.disponibles,
+          enTabla: actual.enTabla-anterior.enTabla, cumplimiento: actual.cumplimiento-anterior.cumplimiento
+        };
+      }
+      localStorage.setItem('stockCausas.snapshotDashboard', JSON.stringify(actual));
+    } catch(e){ /* localStorage no disponible: simplemente no se muestra tendencia */ }
+  }
   var graficoEstado = null, graficoMaterias = null, graficoIngresos = null;
 
   /** Acepta dd-mm-yyyy, dd/mm/yyyy o cualquier formato que Date entienda. */
@@ -1121,13 +1296,16 @@ tr.fila-clicable{cursor:pointer;}
     var conRija = causas.filter(function(c){ return PENDIENTES_ESTADOS[c.estado] && String(c.rija||'').toUpperCase().indexOf('RIJA')>-1; });
     var vencidas = causas.filter(function(c){ return c.estado==='Suspendida Procedimiento' && diasParaReanudarLocal(c)!==null && diasParaReanudarLocal(c)<=0; });
 
+    var conDelta = !libroElegido && deltaDashboard; // el delta se calculó sobre el total sin filtrar
     var kpis = [
-      { tipo:null, valor:null, num:total, lbl:'Total en stock', color:'var(--azul-profundo)' },
-      { tipo:'estado', valor:'Disponible', num:disponibles, lbl:'Disponibles', color:'var(--verde)' },
-      { tipo:'estado', valor:'En Tabla', num:enTabla, lbl:'En Tabla', color:'var(--azul-medio)' },
-      { tipo:'gestionadas', valor:null, num:cumplimiento+'%', lbl:'Cumplimiento (gestionadas)', color:'var(--acento)' },
-      { tipo:'rija', valor:null, num:conRija.length, lbl:'RIJA pendientes', color:'var(--rojo)' },
-      { tipo:'vencida', valor:null, num:vencidas.length, lbl:'Suspensión vencida', color:'var(--purpura)' }
+      { tipo:null, valor:null, num:total, sufijo:'', lbl:'Total en stock', color:'var(--azul-profundo)',
+        tendencia: badgeTendenciaNeutral(conDelta ? deltaDashboard.total : null) },
+      { tipo:'estado', valor:'Disponible', num:disponibles, sufijo:'', lbl:'Disponibles', color:'var(--verde)' },
+      { tipo:'estado', valor:'En Tabla', num:enTabla, sufijo:'', lbl:'En Tabla', color:'var(--azul-medio)' },
+      { tipo:'gestionadas', valor:null, num:cumplimiento, sufijo:'%', lbl:'Cumplimiento (gestionadas)', color:'var(--acento)',
+        tendencia: badgeTendenciaCumplimiento(conDelta ? deltaDashboard.cumplimiento : null) },
+      { tipo:'rija', valor:null, num:conRija.length, sufijo:'', lbl:'RIJA pendientes', color:'var(--rojo)' },
+      { tipo:'vencida', valor:null, num:vencidas.length, sufijo:'', lbl:'Suspensión vencida', color:'var(--purpura)' }
     ];
 
     var cont = document.getElementById('kpisDashboard');
@@ -1137,13 +1315,17 @@ tr.fila-clicable{cursor:pointer;}
       var div = document.createElement('div');
       div.className = 'kpi'+(activo?' activo':'');
       div.style.borderLeftColor = k.color;
-      div.innerHTML = '<div class="num">'+k.num+'</div><div class="lbl">'+k.lbl+'</div>';
+      div.innerHTML = '<div class="num" data-valor="'+k.num+'" data-sufijo="'+k.sufijo+'">0'+k.sufijo+'</div>'+
+        '<div class="lbl">'+k.lbl+'</div>'+(k.tendencia||'');
       div.addEventListener('click', function(){
         if(activo || k.tipo===null) filtroDashboard = null;
         else filtroDashboard = { tipo:k.tipo, valor:k.valor, etiqueta:k.lbl };
         renderDashboard();
       });
       cont.appendChild(div);
+    });
+    cont.querySelectorAll('.num').forEach(function(el){
+      animarNumero(el, Number(el.dataset.valor), el.dataset.sufijo);
     });
 
     dibujarGraficoEstado(porEstado);
@@ -1176,7 +1358,7 @@ tr.fila-clicable{cursor:pointer;}
     tbody.innerHTML = lista.slice(0,300).map(function(c){
       return '<tr><td>'+(c.rol||'')+'</td><td>'+(c.anio||'')+'</td><td>'+(c.libro||'')+'</td>'+celdaMateria(c)+
         '<td>'+(c.tipo||'')+'</td><td>'+chipEstado(c.estado)+'</td><td>'+(c.fechaRelacion||'')+'</td></tr>';
-    }).join('') || '<tr><td colspan="7" class="vacio">Sin resultados</td></tr>';
+    }).join('') || filaVacia(7, 'No hay causas para este filtro', 'Prueba con otro indicador o quita el filtro de libro.');
   }
 
   var COLORES_ESTADO_DASH = {
@@ -1292,7 +1474,7 @@ tr.fila-clicable{cursor:pointer;}
         'Disponibles: '+datos.disponibles+' · En ranking: '+datos.enRanking+
         ' · RIJA: '+datos.conRIJA+' · Pesca: '+datos.conPesca+' · Susp. vencida: '+datos.conSuspensionVencida;
       renderRanking();
-    }).catch(mostrarErrorGlobal).finally(function(){ btn.disabled=false; btn.textContent='🔄 Generar ranking'; });
+    }).catch(mostrarErrorGlobal).finally(function(){ btn.disabled=false; btn.innerHTML=ICONOS.refrescar+' Generar ranking'; });
   });
 
   /** Prioridad visual de la fila en el Ranking: RIJA (naranja) > Pesca (verde) > vencida (lila).
@@ -1316,7 +1498,7 @@ tr.fila-clicable{cursor:pointer;}
         '<td>'+(c.anio||'')+'</td><td>'+(c.libro||'')+'</td>'+celdaMateria(c)+
         '<td class="puntaje">'+c.puntaje+'</td><td class="motivos">'+(c.motivos||[]).join(' · ')+'</td>'+
         '<td>'+(c.fechaRelacion||'')+'</td></tr>';
-    }).join('') || '<tr><td colspan="9" class="vacio">Presiona "Generar ranking" para calcular</td></tr>';
+    }).join('') || filaVacia(9, 'Aún no has generado el ranking', 'Presiona "Generar ranking" arriba para calcular la prioridad.', ICONO_VACIO_LISTA);
 
     tbody.querySelectorAll('.chkRanking').forEach(function(chk){
       chk.addEventListener('change', function(){
@@ -1413,7 +1595,7 @@ tr.fila-clicable{cursor:pointer;}
         '<td class="celda-reanudar" data-id="'+c.idFila+'">'+textoDiasReanudar(c)+'</td>'+
         '<td>'+(c.fechaIngreso||'')+'</td><td>'+(c.fechaRelacion||'')+'</td>'+
         '<td class="celda-acciones">'+(esDup?'<button class="btn btn-peligro btnEliminarDup" data-id="'+c.idFila+'">Eliminar</button>':'')+'</td></tr>';
-    }).join('') || '<tr><td colspan="14" class="vacio">Sin resultados</td></tr>';
+    }).join('') || filaVacia(14, 'No encontramos causas con ese filtro', 'Prueba ajustando la búsqueda, el libro o el estado.');
 
     tbody.querySelectorAll('.chkStock').forEach(function(chk){
       chk.addEventListener('click', function(e){ e.stopPropagation(); });
@@ -1470,13 +1652,16 @@ tr.fila-clicable{cursor:pointer;}
     tbody.querySelectorAll('.btnEliminarDup').forEach(function(btn){
       btn.addEventListener('click', function(e){
         e.stopPropagation();
-        if(!confirm('¿Eliminar esta causa duplicada? No se puede deshacer.')) return;
-        llamarServicio({accion:'eliminarFila', idFila: btn.dataset.id}).then(function(){
-          return llamarServicio({accion:'listar'});
-        }).then(function(datos){
-          estado.causas = datos.causas;
-          actualizarResumenHeader(); renderStock(); renderReportesLocal();
-        }).catch(mostrarErrorGlobal);
+        confirmarAccion('¿Eliminar esta causa duplicada? No se puede deshacer.', {peligro:true, textoOk:'Eliminar'}).then(function(ok){
+          if(!ok) return;
+          llamarServicio({accion:'eliminarFila', idFila: btn.dataset.id}).then(function(){
+            return llamarServicio({accion:'listar'});
+          }).then(function(datos){
+            estado.causas = datos.causas;
+            actualizarResumenHeader(); renderStock(); renderReportesLocal();
+            mostrarToast('Causa duplicada eliminada.', 'exito');
+          }).catch(mostrarErrorGlobal);
+        });
       });
     });
   }
@@ -1506,18 +1691,19 @@ tr.fila-clicable{cursor:pointer;}
     document.getElementById('filtroEstadoStock').value='';
     document.getElementById('filtroLibroStock').value='';
     soloDuplicados=false;
-    document.getElementById('btnDuplicados').textContent='🔴 Ver duplicados';
+    document.getElementById('btnDuplicados').innerHTML = ICONOS.duplicado+' Ver duplicados';
     renderStock();
   });
+  document.getElementById('btnDuplicados').innerHTML = ICONOS.duplicado+' Ver duplicados';
   document.getElementById('btnDuplicados').addEventListener('click', function(){
     soloDuplicados = !soloDuplicados;
-    this.textContent = soloDuplicados ? '✖ Quitar filtro duplicados' : '🔴 Ver duplicados';
+    this.innerHTML = soloDuplicados ? (ICONOS.quitarFiltro+' Quitar filtro duplicados') : (ICONOS.duplicado+' Ver duplicados');
     renderStock();
   });
   document.getElementById('btnActualizarMaterias').addEventListener('click', function(){
     var btn=this; btn.disabled=true;
     llamarServicio({accion:'actualizarMaterias'}).then(function(datos){
-      alert('Materias actualizadas: '+datos.actualizadas);
+      mostrarToast('Materias actualizadas: '+datos.actualizadas, 'exito');
       return llamarServicio({accion:'listar'});
     }).then(function(datos){ estado.causas=datos.causas; renderStock(); renderReportesLocal(); })
     .catch(mostrarErrorGlobal).finally(function(){ btn.disabled=false; });
@@ -1570,8 +1756,8 @@ tr.fila-clicable{cursor:pointer;}
     var idFila = popupContexto.idFila, sel = popupContexto.sel;
     var fechaInput = document.getElementById('popupFechaSuspension').value;
     var dias = document.getElementById('popupDiasSuspension').value.trim();
-    if(!fechaInput){ alert('Ingresa la fecha de suspensión.'); return; }
-    if(!dias){ alert('Ingresa la cantidad de días.'); return; }
+    if(!fechaInput){ mostrarToast('Ingresa la fecha de suspensión.', 'error'); return; }
+    if(!dias){ mostrarToast('Ingresa la cantidad de días.', 'error'); return; }
     var fechaMostrada = formatoInputAFecha(fechaInput);
     var btn = this; btn.disabled = true; btn.textContent = 'Guardando...';
     llamarServicio({accion:'actualizarCausa', idFila: idFila, cambios:{
@@ -1658,7 +1844,7 @@ tr.fila-clicable{cursor:pointer;}
     var fechaSuspensionInput = document.getElementById('editFechaSuspension').value.trim();
     var diasSuspensionInput = document.getElementById('editDiasSuspension').value.trim();
     if(estadoElegido === 'Suspendida Procedimiento' && (!fechaSuspensionInput || !diasSuspensionInput)){
-      alert('Para dejar la causa "Suspendida Procedimiento" es obligatorio indicar la Fecha de suspensión y la Cantidad de días.');
+      mostrarToast('Para dejar la causa "Suspendida Procedimiento" es obligatorio indicar la Fecha de suspensión y la Cantidad de días.', 'error');
       return;
     }
     var btn = this; btn.disabled = true; btn.textContent = 'Guardando...';
@@ -1722,7 +1908,7 @@ tr.fila-clicable{cursor:pointer;}
         '<td>'+(c.rol||'')+'</td><td>'+(c.anio||'')+'</td><td>'+(c.libro||'')+'</td>'+celdaMateria(c)+
         '<td>'+(c.tipo||'')+'</td><td>'+(c.complejidad||'')+'</td><td>'+(tieneRija?'Sí':'—')+'</td>'+
         '<td>'+(c.fechaIngreso||'')+'</td><td>'+(c.fechaRelacion||'')+'</td></tr>';
-    }).join('') || '<tr><td colspan="10" class="vacio">Aún no hay causas seleccionadas. Marca el checkbox en Ranking o en Stock y presiona "Preparar tabla →".</td></tr>';
+    }).join('') || filaVacia(10, 'Aún no hay causas seleccionadas', 'Marca el checkbox en Ranking o en Stock y presiona "Preparar tabla →".', ICONO_VACIO_LISTA);
 
     tbody.querySelectorAll('.btnQuitarTraspaso').forEach(function(btn){
       btn.addEventListener('click', function(){
@@ -1739,26 +1925,31 @@ tr.fila-clicable{cursor:pointer;}
 
   document.getElementById('btnLimpiarTraspaso').addEventListener('click', function(){
     if(Object.keys(estado.seleccionStaging).length===0) return;
-    if(!confirm('¿Vaciar la selección completa?')) return;
-    estado.seleccionStaging = {};
-    renderBarraStaging(); renderTraspaso(); renderRanking(); renderStock();
+    confirmarAccion('¿Vaciar la selección completa?', {peligro:true, textoOk:'Vaciar'}).then(function(ok){
+      if(!ok) return;
+      estado.seleccionStaging = {};
+      renderBarraStaging(); renderTraspaso(); renderRanking(); renderStock();
+    });
   });
 
   document.getElementById('btnConfirmarTraspaso').addEventListener('click', function(){
     var ids = Object.keys(estado.seleccionStaging);
     if(ids.length===0) return;
+    var btnOrigen = this;
     var listado = ids.map(function(id){ var c=estado.seleccionStaging[id]; return (c.rol||'')+' - '+(c.libro||'')+' ('+(c.anio||'')+')'; }).join('\n');
-    if(!confirm('Se marcarán como "En Tabla" '+ids.length+' causa(s):\n\n'+listado+'\n\n¿Confirmar y guardar?')) return;
-    var btn = this; btn.disabled = true; btn.textContent = 'Guardando...';
-    llamarServicio({accion:'confirmarTabla', idsFila: ids}).then(function(datos){
-      alert('Actualizadas '+datos.actualizadas+' causa(s) a estado "En Tabla".');
-      estado.seleccionStaging = {};
-      renderBarraStaging();
-      return llamarServicio({accion:'listar'});
-    }).then(function(datos){
-      estado.causas = datos.causas;
-      actualizarResumenHeader(); renderReportesLocal(); renderStock(); renderRanking(); renderTraspaso();
-    }).catch(mostrarErrorGlobal).finally(function(){ btn.disabled=false; btn.textContent='Confirmar y marcar "En Tabla"'; });
+    confirmarAccion('Se marcarán como "En Tabla" '+ids.length+' causa(s):\n\n'+listado, {textoOk:'Confirmar y guardar'}).then(function(ok){
+      if(!ok) return;
+      btnOrigen.disabled = true; btnOrigen.textContent = 'Guardando...';
+      llamarServicio({accion:'confirmarTabla', idsFila: ids}).then(function(datos){
+        mostrarToast('Actualizadas '+datos.actualizadas+' causa(s) a estado "En Tabla".', 'exito');
+        estado.seleccionStaging = {};
+        renderBarraStaging();
+        return llamarServicio({accion:'listar'});
+      }).then(function(datos){
+        estado.causas = datos.causas;
+        actualizarResumenHeader(); renderReportesLocal(); renderStock(); renderRanking(); renderTraspaso();
+      }).catch(mostrarErrorGlobal).finally(function(){ btnOrigen.disabled=false; btnOrigen.textContent='Confirmar y marcar "En Tabla"'; });
+    });
   });
 
   /* ================= INGESTA ================= */
@@ -1785,11 +1976,13 @@ tr.fila-clicable{cursor:pointer;}
   document.getElementById('btnCargarStock').addEventListener('click', function(){
     var filas = parsearPegado(document.getElementById('pasteStock').value);
     var objetos = filas.map(function(f){ return { rol:f[0]||'', anio:f[1]||'', libro:f[2]||'', materia:f[3]||'' }; });
-    if(!confirm('Se van a actualizar/agregar '+objetos.length+' fila(s) en el listado Stock. ¿Continuar?')) return;
-    llamarServicio({accion:'cargarStock', filas: objetos}).then(function(datos){
-      document.getElementById('resultadoStock').innerHTML = '<p class="aviso">Actualizadas: <b>'+datos.actualizadas+'</b> · Agregadas: <b>'+datos.agregadas+'</b>.</p>';
-      document.getElementById('pasteStock').value='';
-    }).catch(mostrarErrorGlobal);
+    confirmarAccion('Se van a actualizar/agregar '+objetos.length+' fila(s) en el listado Stock. ¿Continuar?', {textoOk:'Continuar'}).then(function(ok){
+      if(!ok) return;
+      llamarServicio({accion:'cargarStock', filas: objetos}).then(function(datos){
+        document.getElementById('resultadoStock').innerHTML = '<p class="aviso">Actualizadas: <b>'+datos.actualizadas+'</b> · Agregadas: <b>'+datos.agregadas+'</b>.</p>';
+        document.getElementById('pasteStock').value='';
+      }).catch(mostrarErrorGlobal);
+    });
   });
 
   /* ================= CONFIG ================= */
@@ -1814,14 +2007,14 @@ tr.fila-clicable{cursor:pointer;}
       return { nivel: Number(sel.dataset.nivel), libro: sel.value, puntaje: Number(sel.dataset.puntaje) };
     });
     llamarServicio({accion:'guardarConfig', prioridad: prioridad}).then(function(){
-      alert('Configuración guardada.');
+      mostrarToast('Configuración guardada.', 'exito');
     }).catch(mostrarErrorGlobal);
   });
 
   document.getElementById('btnGuardarServicio').addEventListener('click', function(){
     almacen.urlServicio = document.getElementById('inputUrlServicio').value.trim();
     localStorage.setItem('stockCausas.urlServicio', almacen.urlServicio);
-    alert('URL de servicio guardada. Recargando datos...');
+    mostrarToast('URL de servicio guardada. Recargando datos...', 'info');
     cargarTodo();
   });
 
