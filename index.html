@@ -234,6 +234,12 @@ tr.fila-total-libro td{background:var(--fondo);font-weight:700;color:var(--azul-
   @page{ size: portrait; margin: 14mm; }
   .informe-header{display:none;}
   .informe-hoja{max-width:100%;}
+  /* cada bloque empieza en una página limpia — evita que el gráfico o una
+     tabla queden cortados a la mitad con un salto de página a medio camino */
+  .informe-bloque-pagina{break-before:page;page-break-before:always;}
+  .informe-chart-cont, #tablaInformeResumen, .informe-kpis{break-inside:avoid;page-break-inside:avoid;}
+  #tablaInformeDetalle thead{display:table-header-group;} /* repite el encabezado si la tabla larga cruza de página */
+  tr{break-inside:avoid;page-break-inside:avoid;}
   .informe-titulo{color:#000;}
   .informe-resumen-texto{background:#f4f4f4;border-left-color:#000;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
   .informe-kpi .num{color:#000;}
@@ -744,26 +750,30 @@ tr.fila-clicable{cursor:pointer;}
 
             <div class="informe-resumen-texto" id="informeResumenTexto"></div>
 
-            <p class="informe-seccion-titulo">Causas en relación por libro</p>
-            <div class="informe-chart-cont"><canvas id="chartInforme"></canvas></div>
+            <div class="informe-bloque-pagina">
+              <p class="informe-seccion-titulo">Causas en relación por libro</p>
+              <div class="informe-chart-cont"><canvas id="chartInforme"></canvas></div>
 
-            <div class="contenedor-tabla">
-              <table class="datos tabla-informe" id="tablaInformeResumen">
-                <thead><tr><th>Libro</th><th>Definitiva (D)</th><th>Artículo (A)</th><th>Total</th><th style="width:34%;">% del total</th></tr></thead>
-                <tbody></tbody>
-                <tfoot></tfoot>
-              </table>
+              <div class="contenedor-tabla">
+                <table class="datos tabla-informe" id="tablaInformeResumen">
+                  <thead><tr><th>Libro</th><th>Definitiva (D)</th><th>Artículo (A)</th><th>Total</th><th style="width:34%;">% del total</th></tr></thead>
+                  <tbody></tbody>
+                  <tfoot></tfoot>
+                </table>
+              </div>
             </div>
 
-            <p class="informe-seccion-titulo" style="margin-top:var(--e5);">Detalle por año</p>
-            <div class="contenedor-tabla">
-              <table class="datos tabla-informe tabla-detalle-anio" id="tablaInformeDetalle">
-                <thead><tr><th>Libro</th><th>Año</th><th>D</th><th>A</th><th>Total</th></tr></thead>
-                <tbody></tbody>
-              </table>
-            </div>
+            <div class="informe-bloque-pagina">
+              <p class="informe-seccion-titulo">Detalle por año</p>
+              <div class="contenedor-tabla">
+                <table class="datos tabla-informe tabla-detalle-anio" id="tablaInformeDetalle">
+                  <thead><tr><th>Libro</th><th>Año</th><th>D</th><th>A</th><th>Total</th></tr></thead>
+                  <tbody></tbody>
+                </table>
+              </div>
 
-            <p class="informe-pie">Unidad de Causas y Salas · Iltma. Corte de Apelaciones de La Serena — Generado automáticamente por Prioriza PJUD el <span id="informeFechaPie"></span>.</p>
+              <p class="informe-pie">Unidad de Causas y Salas · Iltma. Corte de Apelaciones de La Serena — Generado automáticamente por Prioriza PJUD el <span id="informeFechaPie"></span>.</p>
+            </div>
           </div>
         </div>
       </div>
@@ -1795,7 +1805,7 @@ tr.fila-clicable{cursor:pointer;}
     var dataD = libros.map(function(l){ return dPorLibro[l]; });
     var dataA = libros.map(function(l){ return aPorLibro[l]; });
     if(graficoInforme) graficoInforme.destroy();
-    ctx.parentElement.style.height = Math.max(120, libros.length*44 + 40) + 'px';
+    ctx.parentElement.style.height = Math.max(110, libros.length*36 + 36) + 'px';
     if(libros.length===0) return;
     graficoInforme = new Chart(ctx, {
       type: 'bar',
