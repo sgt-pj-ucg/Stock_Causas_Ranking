@@ -190,32 +190,58 @@ input.buscador{min-width:220px;flex:1;width:100%;}
 .chip-filtro span.x{cursor:pointer;font-weight:700;}
 .contador-resultados{color:var(--texto-suave);font-size:12px;margin:0 0 var(--e2);}
 
-/* -------- Informe Mensual (resumen ejecutivo) -------- */
+/* -------- Informe Mensual (resumen ejecutivo para jefatura) -------- */
+:root{ --informe-teal:#1D8A9E; }
 .informe-header{display:flex;align-items:flex-start;justify-content:space-between;gap:var(--e3);
   flex-wrap:wrap;margin-bottom:var(--e4);}
-.informe-portada{text-align:center;padding:var(--e4) 0 var(--e5);border-bottom:1px solid var(--borde);margin-bottom:var(--e4);}
-.informe-marca{color:var(--acento);font-size:12px;font-weight:800;letter-spacing:.16em;margin-bottom:10px;}
-.informe-titulo{color:var(--azul-profundo);font-size:24px;font-weight:800;margin:0 0 6px;}
-.informe-fecha{color:var(--texto-suave);font-size:13px;margin:0 0 2px;font-weight:600;}
-.informe-institucion{color:var(--texto-suave);font-size:12px;margin:0;}
-.informe-kpis{margin-bottom:var(--e4);}
-.informe-resumen-texto{background:var(--azul-claro);color:var(--azul-profundo);border-radius:8px;
-  padding:var(--e3) var(--e4);font-size:13.5px;line-height:1.6;margin-bottom:var(--e4);}
+.informe-hoja{max-width:760px;margin:0 auto;}
+.informe-portada{text-align:center;padding:0 0 var(--e4);border-bottom:2px solid var(--azul-profundo);margin-bottom:var(--e4);}
+.informe-marca{color:var(--informe-teal);font-size:11px;font-weight:800;letter-spacing:.2em;margin:0 0 12px;}
+.informe-titulo{color:var(--azul-profundo);font-size:25px;font-weight:800;margin:0 0 10px;letter-spacing:-.01em;}
+.informe-meta{color:var(--texto-suave);font-size:12.5px;margin:0;}
+.informe-meta b{color:var(--texto);font-weight:600;}
+.informe-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--borde);
+  border:1px solid var(--borde);border-radius:8px;overflow:hidden;margin-bottom:var(--e4);}
+.informe-kpi{background:var(--superficie);padding:var(--e3) var(--e2);text-align:center;}
+.informe-kpi .num{font-size:26px;font-weight:800;color:var(--azul-profundo);font-variant-numeric:tabular-nums;line-height:1.1;}
+.informe-kpi.acento-a .num{color:var(--informe-teal);}
+.informe-kpi .lbl{font-size:10.5px;color:var(--texto-suave);text-transform:uppercase;letter-spacing:.05em;margin-top:5px;}
+.informe-resumen-texto{border-left:3px solid var(--azul-profundo);background:var(--fondo);
+  padding:var(--e3) var(--e4);font-size:13.5px;line-height:1.65;margin-bottom:var(--e5);color:var(--texto);}
 .informe-resumen-texto p{margin:0;}
-.informe-chart-cont{height:280px;margin-bottom:var(--e4);}
-table.tabla-informe td, table.tabla-informe th{text-align:right;}
-table.tabla-informe td:first-child, table.tabla-informe th:first-child,
-table.tabla-informe td:nth-child(2), table.tabla-informe th:nth-child(2){text-align:left;}
-tr.fila-total-libro td{background:#eef2f7;font-weight:700;color:var(--azul-profundo);}
-tr.fila-total-general td{background:var(--azul-profundo);color:#fff;font-weight:800;font-size:13.5px;}
-.informe-pie{text-align:center;color:var(--texto-suave);font-size:11px;margin-top:var(--e4);}
+.informe-seccion-titulo{font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--azul-profundo);margin:0 0 var(--e3);padding-bottom:8px;border-bottom:1px solid var(--borde);}
+.informe-chart-cont{position:relative;margin-bottom:var(--e5);}
+table.tabla-informe{font-size:13px;}
+table.tabla-informe td, table.tabla-informe th{text-align:right;padding:9px 10px;}
+table.tabla-informe td:first-child, table.tabla-informe th:first-child{text-align:left;}
+table.tabla-informe thead th{background:var(--fondo);color:var(--texto-suave);font-size:10.5px;
+  text-transform:uppercase;letter-spacing:.04em;font-weight:700;border-bottom:2px solid var(--azul-profundo);}
+table.tabla-informe td{font-variant-numeric:tabular-nums;}
+.celda-barra-pct{position:relative;}
+.barra-pct-fondo{position:absolute;inset:5px 10px;border-radius:3px;background:var(--azul-claro);z-index:0;}
+.barra-pct-relleno{position:absolute;top:5px;bottom:5px;left:10px;border-radius:3px;background:var(--azul-profundo);z-index:1;}
+.celda-barra-pct span{position:relative;z-index:2;}
+tr.fila-resumen-libro td{border-bottom:1px solid var(--borde);}
+tr.fila-total-general td{background:var(--azul-profundo);color:#fff;font-weight:800;font-size:13.5px;border-bottom:none;}
+.tabla-detalle-anio{font-size:11.5px;color:var(--texto-suave);}
+.tabla-detalle-anio thead th{background:transparent;color:var(--texto-suave);font-size:10px;border-bottom:1px solid var(--borde);}
+.tabla-detalle-anio td{padding:5px 10px;color:var(--texto-suave);}
+tr.fila-total-libro td{background:var(--fondo);font-weight:700;color:var(--azul-profundo);border-top:1px solid var(--borde);border-bottom:2px solid var(--borde);}
+.informe-pie{text-align:center;color:var(--texto-suave);font-size:10.5px;margin-top:var(--e5);
+  padding-top:var(--e3);border-top:1px solid var(--borde);}
 @media print{
+  @page{ size: portrait; margin: 14mm; }
   .informe-header{display:none;}
-  .informe-portada{border-bottom:2px solid #000;}
+  .informe-hoja{max-width:100%;}
   .informe-titulo{color:#000;}
-  .informe-resumen-texto{background:#eee;color:#000;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  .informe-resumen-texto{background:#f4f4f4;border-left-color:#000;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  .informe-kpi .num{color:#000;}
+  table.tabla-informe thead th{background:#eee!important;border-bottom-color:#000;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
   tr.fila-total-general td{background:#000!important;color:#fff!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
-  tr.fila-total-libro td{background:#eee!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  tr.fila-total-libro td{background:#f2f2f2!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  .barra-pct-relleno{background:#0F2A4A!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  .barra-pct-fondo{background:#e6e6e6!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
 }
 
 /* -------- tabla -------- */
@@ -707,28 +733,38 @@ tr.fila-clicable{cursor:pointer;}
           <button class="btn btn-secundario" id="btnImprimirInforme"><svg class="icono-btn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V3h12v6"/><rect x="4" y="9" width="16" height="8" rx="1.5"/><path d="M6 17v4h12v-4"/></svg> Imprimir / PDF</button>
         </div>
         <div class="zona-imprimible" id="areaImprimibleInforme">
-          <div class="informe-portada">
-            <p class="informe-marca">PRIORIZA PJUD</p>
-            <h1 class="informe-titulo">Stock de Causas en Relación para Tabla</h1>
-            <p class="informe-fecha" id="informeFecha"></p>
-            <p class="informe-institucion">Unidad de Causas y Salas · Iltma. Corte de Apelaciones de La Serena</p>
+          <div class="informe-hoja">
+            <div class="informe-portada">
+              <p class="informe-marca">PRIORIZA PJUD</p>
+              <h1 class="informe-titulo">Stock de Causas en Relación para Tabla</h1>
+              <p class="informe-meta" id="informeFecha"></p>
+            </div>
+
+            <div class="informe-kpis" id="informeKpis"></div>
+
+            <div class="informe-resumen-texto" id="informeResumenTexto"></div>
+
+            <p class="informe-seccion-titulo">Causas en relación por libro</p>
+            <div class="informe-chart-cont"><canvas id="chartInforme"></canvas></div>
+
+            <div class="contenedor-tabla">
+              <table class="datos tabla-informe" id="tablaInformeResumen">
+                <thead><tr><th>Libro</th><th>Definitiva (D)</th><th>Artículo (A)</th><th>Total</th><th style="width:34%;">% del total</th></tr></thead>
+                <tbody></tbody>
+                <tfoot></tfoot>
+              </table>
+            </div>
+
+            <p class="informe-seccion-titulo" style="margin-top:var(--e5);">Detalle por año</p>
+            <div class="contenedor-tabla">
+              <table class="datos tabla-informe tabla-detalle-anio" id="tablaInformeDetalle">
+                <thead><tr><th>Libro</th><th>Año</th><th>D</th><th>A</th><th>Total</th></tr></thead>
+                <tbody></tbody>
+              </table>
+            </div>
+
+            <p class="informe-pie">Unidad de Causas y Salas · Iltma. Corte de Apelaciones de La Serena — Generado automáticamente por Prioriza PJUD el <span id="informeFechaPie"></span>.</p>
           </div>
-
-          <div class="grid-kpi informe-kpis" id="informeKpis"></div>
-
-          <div class="informe-resumen-texto" id="informeResumenTexto"></div>
-
-          <div class="dash-chart-cont informe-chart-cont"><canvas id="chartInforme"></canvas></div>
-
-          <div class="contenedor-tabla">
-            <table class="datos tabla-informe" id="tablaInforme">
-              <thead><tr><th>Libro</th><th>Año</th><th>Definitiva (D)</th><th>Artículo (A)</th><th>Total</th></tr></thead>
-              <tbody></tbody>
-              <tfoot></tfoot>
-            </table>
-          </div>
-
-          <p class="informe-pie">Generado automáticamente por Prioriza PJUD el <span id="informeFechaPie"></span>.</p>
         </div>
       </div>
     </section>
@@ -1659,7 +1695,7 @@ tr.fila-clicable{cursor:pointer;}
    *  pendientes de tabla) — misma lógica que la planilla dinámica que se
    *  entrega hoy a jefatura, pero calculada en vivo y presentada como reporte. */
   function renderInformeMensual(){
-    if(!document.getElementById('tablaInforme')) return;
+    if(!document.getElementById('tablaInformeResumen')) return;
     var causas = estado.causas.filter(function(c){ return c.estado==='Disponible'; });
 
     var pivot = {};
@@ -1672,69 +1708,108 @@ tr.fila-clicable{cursor:pointer;}
       pivot[libro][anio][tipo]++;
     });
 
-    var libros = Object.keys(pivot).sort(function(a,b){ return a.localeCompare(b,'es'); });
-    var filasHtml = '';
+    var totalPorLibro = {}, dPorLibro = {}, aPorLibro = {};
     var granD=0, granA=0;
-    var totalPorLibro = {};
-    libros.forEach(function(libro){
-      var anios = Object.keys(pivot[libro]).sort();
-      var totalLibroD=0, totalLibroA=0;
-      anios.forEach(function(anio){
-        var d = pivot[libro][anio].D, a = pivot[libro][anio].A;
-        totalLibroD+=d; totalLibroA+=a;
-        filasHtml += '<tr><td>'+libro+'</td><td>'+anio+'</td><td>'+d+'</td><td>'+a+'</td><td>'+(d+a)+'</td></tr>';
-      });
-      filasHtml += '<tr class="fila-total-libro"><td colspan="2">Total '+libro+'</td><td>'+totalLibroD+'</td><td>'+totalLibroA+'</td><td>'+(totalLibroD+totalLibroA)+'</td></tr>';
-      totalPorLibro[libro] = totalLibroD+totalLibroA;
-      granD+=totalLibroD; granA+=totalLibroA;
+    Object.keys(pivot).forEach(function(libro){
+      var d=0, a=0;
+      Object.keys(pivot[libro]).forEach(function(anio){ d+=pivot[libro][anio].D; a+=pivot[libro][anio].A; });
+      dPorLibro[libro]=d; aPorLibro[libro]=a; totalPorLibro[libro]=d+a;
+      granD+=d; granA+=a;
     });
     var granTotal = granD+granA;
 
-    document.querySelector('#tablaInforme tbody').innerHTML = filasHtml ||
-      '<tr><td colspan="5" class="vacio">No hay causas "Disponible" para incluir en el informe.</td></tr>';
-    document.querySelector('#tablaInforme tfoot').innerHTML = filasHtml ?
-      '<tr class="fila-total-general"><td colspan="2">TOTAL GENERAL</td><td>'+granD+'</td><td>'+granA+'</td><td>'+granTotal+'</td></tr>' : '';
+    // orden por relevancia: el libro con más causas primero — así se lee de un vistazo qué pesa más
+    var librosPorTotal = Object.keys(pivot).sort(function(a,b){ return totalPorLibro[b]-totalPorLibro[a]; });
 
+    /* -------- tabla 1: resumen por libro (la que realmente importa a jefatura) -------- */
+    var filasResumen = librosPorTotal.map(function(libro){
+      var pct = granTotal ? Math.round(totalPorLibro[libro]/granTotal*100) : 0;
+      return '<tr class="fila-resumen-libro"><td>'+libro+'</td><td>'+dPorLibro[libro]+'</td><td>'+aPorLibro[libro]+'</td>'+
+        '<td><b>'+totalPorLibro[libro]+'</b></td>'+
+        '<td class="celda-barra-pct"><div class="barra-pct-fondo"></div><div class="barra-pct-relleno" style="width:calc('+pct+'% - 20px)"></div><span>'+pct+'%</span></td></tr>';
+    }).join('');
+    document.querySelector('#tablaInformeResumen tbody').innerHTML = filasResumen ||
+      '<tr><td colspan="5" class="vacio">No hay causas "Disponible" para incluir en el informe.</td></tr>';
+    document.querySelector('#tablaInformeResumen tfoot').innerHTML = filasResumen ?
+      '<tr class="fila-total-general"><td>TOTAL GENERAL</td><td>'+granD+'</td><td>'+granA+'</td><td>'+granTotal+'</td><td>100%</td></tr>' : '';
+
+    /* -------- tabla 2: detalle por año (secundaria, para quien quiera profundizar) -------- */
+    var filasDetalle = '';
+    librosPorTotal.forEach(function(libro){
+      var anios = Object.keys(pivot[libro]).sort();
+      anios.forEach(function(anio){
+        var d = pivot[libro][anio].D, a = pivot[libro][anio].A;
+        filasDetalle += '<tr><td>'+libro+'</td><td>'+anio+'</td><td>'+d+'</td><td>'+a+'</td><td>'+(d+a)+'</td></tr>';
+      });
+      filasDetalle += '<tr class="fila-total-libro"><td colspan="2">Total '+libro+'</td><td>'+dPorLibro[libro]+'</td><td>'+aPorLibro[libro]+'</td><td>'+totalPorLibro[libro]+'</td></tr>';
+    });
+    document.querySelector('#tablaInformeDetalle tbody').innerHTML = filasDetalle ||
+      '<tr><td colspan="5" class="vacio">Sin datos.</td></tr>';
+
+    /* -------- KPIs -------- */
     document.getElementById('informeKpis').innerHTML = [
       { num:granTotal, lbl:'Total en relación' },
       { num:granD, lbl:'Definitiva (D)' },
-      { num:granA, lbl:'Artículo (A)' },
-      { num:libros.length, lbl:'Libros con causas' }
-    ].map(function(k){ return '<div class="kpi"><div class="num">'+k.num+'</div><div class="lbl">'+k.lbl+'</div></div>'; }).join('');
+      { num:granA, lbl:'Artículo (A)', acento:true },
+      { num:librosPorTotal.length, lbl:'Libros con causas' }
+    ].map(function(k){ return '<div class="informe-kpi'+(k.acento?' acento-a':'')+'"><div class="num">'+k.num+'</div><div class="lbl">'+k.lbl+'</div></div>'; }).join('');
 
-    var libroMayor = null;
-    libros.forEach(function(l){ if(!libroMayor || totalPorLibro[l]>totalPorLibro[libroMayor]) libroMayor = l; });
-    var pct = (libroMayor && granTotal) ? Math.round(totalPorLibro[libroMayor]/granTotal*100) : 0;
+    /* -------- texto ejecutivo -------- */
+    var libroMayor = librosPorTotal[0] || null;
+    var pctMayor = (libroMayor && granTotal) ? Math.round(totalPorLibro[libroMayor]/granTotal*100) : 0;
     document.getElementById('informeResumenTexto').innerHTML = granTotal
       ? '<p>Al <b>'+new Date().toLocaleDateString('es-CL')+'</b> hay <b>'+granTotal+' causas</b> en relación pendientes de ser puestas en tabla'+
-        (libroMayor ? ', concentradas principalmente en <b>'+libroMayor+'</b> ('+totalPorLibro[libroMayor]+' causas, '+pct+'% del total)' : '')+'.</p>'
+        (libroMayor ? ', concentradas principalmente en <b>'+libroMayor+'</b> ('+totalPorLibro[libroMayor]+' causas, '+pctMayor+'% del total)' : '')+'.</p>'
       : '<p>No hay causas en estado "Disponible" en este momento.</p>';
 
     document.getElementById('informeFecha').textContent =
-      'Al '+new Date().toLocaleDateString('es-CL', { day:'2-digit', month:'long', year:'numeric' });
+      'Al '+new Date().toLocaleDateString('es-CL', { day:'2-digit', month:'long', year:'numeric' })+' · Unidad de Causas y Salas · Iltma. Corte de Apelaciones de La Serena';
     document.getElementById('informeFechaPie').textContent = new Date().toLocaleString('es-CL');
 
-    dibujarGraficoInforme(libros, totalPorLibro, pivot);
+    dibujarGraficoInforme(librosPorTotal, dPorLibro, aPorLibro);
   }
 
-  function dibujarGraficoInforme(libros, totalPorLibro, pivot){
+  /** Dibuja los totales al final de cada barra directamente sobre el canvas —
+   *  así se leen también en el PDF impreso, donde el tooltip no existe. */
+  var pluginEtiquetasInforme = {
+    id: 'etiquetasInforme',
+    afterDatasetsDraw: function(chart){
+      var ctx = chart.ctx;
+      var metaD = chart.getDatasetMeta(0), metaA = chart.getDatasetMeta(1);
+      ctx.save();
+      ctx.font = '700 11px Sora, sans-serif';
+      ctx.fillStyle = '#0F2A4A';
+      ctx.textBaseline = 'middle';
+      ctx.textAlign = 'left';
+      metaA.data.forEach(function(barra, i){
+        var total = chart.data.datasets[0].data[i] + chart.data.datasets[1].data[i];
+        ctx.fillText(String(total), barra.x + 6, barra.y);
+      });
+      ctx.restore();
+    }
+  };
+
+  function dibujarGraficoInforme(libros, dPorLibro, aPorLibro){
     var ctx = document.getElementById('chartInforme');
     if(!ctx || typeof Chart==='undefined') return;
-    var dataD = libros.map(function(l){ return Object.keys(pivot[l]).reduce(function(s,a){ return s+pivot[l][a].D; }, 0); });
-    var dataA = libros.map(function(l){ return Object.keys(pivot[l]).reduce(function(s,a){ return s+pivot[l][a].A; }, 0); });
+    var dataD = libros.map(function(l){ return dPorLibro[l]; });
+    var dataA = libros.map(function(l){ return aPorLibro[l]; });
     if(graficoInforme) graficoInforme.destroy();
+    ctx.parentElement.style.height = Math.max(120, libros.length*44 + 40) + 'px';
     if(libros.length===0) return;
     graficoInforme = new Chart(ctx, {
       type: 'bar',
       data: { labels: libros, datasets: [
-        { label:'Definitiva (D)', data:dataD, backgroundColor:'#1D4E7E', borderRadius:4 },
-        { label:'Artículo (A)', data:dataA, backgroundColor:'#39C4D6', borderRadius:4 }
+        { label:'Definitiva (D)', data:dataD, backgroundColor:'#0F2A4A', borderRadius:3, barPercentage:.62 },
+        { label:'Artículo (A)', data:dataA, backgroundColor:'#1D8A9E', borderRadius:3, barPercentage:.62 }
       ] },
       options: {
-        responsive:true, maintainAspectRatio:false,
+        indexAxis:'y', responsive:true, maintainAspectRatio:false,
+        layout:{ padding:{ right:34 } },
         plugins:{ legend:{ position:'bottom', labels:{ boxWidth:12, font:{size:11} } } },
-        scales:{ x:{ stacked:true }, y:{ stacked:true, beginAtZero:true, ticks:{precision:0} } }
-      }
+        scales:{ x:{ stacked:true, beginAtZero:true, ticks:{precision:0} }, y:{ stacked:true, ticks:{font:{size:12}} } }
+      },
+      plugins:[pluginEtiquetasInforme]
     });
   }
 
