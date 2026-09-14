@@ -926,20 +926,45 @@ tr.fila-clicable{cursor:pointer;}
   /* ---------------- comunicación con backend ---------------- */
   function hayServicio(){ return !!almacen.urlServicio; }
 
+  /** Acciones de solo lectura: es seguro reintentarlas solas si Google Apps
+   *  Script falla de forma pasajera (404/500/timeout). Las de escritura NO se
+   *  reintentan automáticamente — si la primera respuesta se perdió pero la
+   *  escritura sí llegó a aplicarse en la planilla, reintentar podría duplicar
+   *  o desfasar filas (por ejemplo, borrar la fila equivocada). Ante una
+   *  escritura fallida, mejor mostrar el error y dejar que la persona decida.*/
+  var ACCIONES_SOLO_LECTURA = { listar:1, probar:1, diagnostico:1, generarRanking:1, reportes:1, detectarDuplicados:1 };
+
   function llamarServicio(cuerpo){
     if(!hayServicio()) return Promise.reject(new Error('Configura la URL del servicio en "Configuración".'));
     cuerpo.clave = almacen.clave;
+    var permiteReintento = !!ACCIONES_SOLO_LECTURA[cuerpo.accion];
+    return intentarLlamadaServicio(cuerpo, permiteReintento ? 1 : 0);
+  }
+
+  function intentarLlamadaServicio(cuerpo, reintentosRestantes){
+    var controlador = ('AbortController' in window) ? new AbortController() : null;
+    var venceEn = setTimeout(function(){ if(controlador) controlador.abort(); }, 25000);
     return fetch(almacen.urlServicio, {
       method:'POST',
       headers:{'Content-Type':'text/plain;charset=utf-8'},
       body: JSON.stringify(cuerpo),
-      redirect:'follow'
+      redirect:'follow',
+      signal: controlador ? controlador.signal : undefined
     }).then(function(r){
+      clearTimeout(venceEn);
       if(!r.ok) throw new Error('El servicio respondió '+r.status+'.');
       return r.json();
     }).then(function(datos){
       if(!datos || datos.ok !== true) throw new Error((datos && datos.error) || 'Respuesta inesperada del servicio.');
       return datos;
+    }).catch(function(err){
+      clearTimeout(venceEn);
+      var esTimeout = err && err.name === 'AbortError';
+      if(reintentosRestantes > 0){
+        return new Promise(function(resolve){ setTimeout(resolve, 1200); })
+          .then(function(){ return intentarLlamadaServicio(cuerpo, reintentosRestantes-1); });
+      }
+      throw new Error(esTimeout ? 'El servicio no respondió a tiempo (Google Apps Script puede demorar varios segundos con esta cantidad de causas). Intenta de nuevo.' : err.message);
     });
   }
 
