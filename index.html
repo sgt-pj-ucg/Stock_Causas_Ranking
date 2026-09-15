@@ -534,28 +534,13 @@ tr.fila-inconsistente td{background:#fdf3e3!important;}
     <section id="vista-ingesta" class="oculto">
       <div class="tarjeta">
         <h2>Cargar archivo Excel</h2>
-        <p class="subt">Sube el archivo Excel de origen: la plataforma identifica las columnas automáticamente por su nombre
-        (<b>ROL · AÑO · LIBRO · FECHA INGRESO · OBSERVACION · FECHA RELACIÓN</b>), sin importar el orden en que vengan.
+        <p class="subt">Sube el archivo Excel de origen: la plataforma identifica las columnas automáticamente por su nombre, sin importar el orden en que vengan
+        (<b>ROL · AÑO · LIBRO · MATERIA · TIPO · COMPLEJIDAD · ESTADO · RIJA · SUSPENSIÓN · DÍAS PARA REANUDAR · FECHA INGRESO · FECHA RELACIÓN</b> — basta con que estén las columnas ROL, AÑO, LIBRO y FECHA INGRESO; el resto se toma si viene en el archivo).
         Antes de importar se muestra una vista previa: las filas que ya existían quedan destacadas para que el funcionario decida si corresponde eliminarlas,
         y las filas con datos incompletos quedan marcadas para revisión.</p>
         <div class="fila-acciones">
           <button class="btn btn-primario" id="btnAbrirExcel">Cargar planilla Excel (.xlsx)</button>
         </div>
-      </div>
-      <div class="tarjeta">
-        <h2>Alternativa: pegar filas manualmente</h2>
-        <p class="subt">Pega filas copiadas desde Excel (separadas por tabulación), con columnas en este orden:
-        <b>ROL · AÑO · LIBRO · FECHA INGRESO · OBSERVACION · FECHA RELACIÓN</b>. Las filas repetidas (por ROL+AÑO+LIBRO) también se ingresan, destacadas como duplicadas.</p>
-        <div class="campo-editar" style="max-width:260px;">
-          <label for="mesIngesta">Mes que estás ingresando</label>
-          <input type="month" id="mesIngesta">
-        </div>
-        <p class="subt" style="margin-top:-8px;">Se ingresarán <b>solo</b> las filas cuya FECHA INGRESO caiga en ese mes — el resto se deja fuera para que no se mezclen períodos por error.</p>
-        <textarea class="paste" id="pasteIngesta" placeholder="703&#9;2024&#9;Civil&#9;03-05-2024&#9;Civil-casación y apelación&#9;27-05-2024"></textarea>
-        <div class="fila-acciones" style="margin-top:var(--e3)">
-          <button class="btn btn-primario" id="btnIngestar">Ingresar causas del mes</button>
-        </div>
-        <div id="resultadoIngesta"></div>
       </div>
       <div class="tarjeta">
         <h2>Actualizar listado "Stock" (para cruce de materia)</h2>
@@ -932,7 +917,8 @@ tr.fila-inconsistente td{background:#fdf3e3!important;}
   <div class="popup-caja popup-caja-ancha">
     <h3>Cargar planilla Excel</h3>
     <div id="excelPaso1">
-      <p class="subt">Selecciona el archivo y confirma el mes que estás cargando. Se analizarán solo las filas cuya FECHA INGRESO caiga en ese mes.</p>
+      <p class="subt">Selecciona el archivo y confirma el mes que estás cargando. Se analizarán solo las filas cuya FECHA INGRESO caiga en ese mes.
+      Se reconocen las columnas ROL, AÑO, LIBRO, MATERIA, TIPO, COMPLEJIDAD, ESTADO, RIJA, SUSPENSIÓN, DÍAS PARA REANUDAR, FECHA INGRESO y FECHA RELACIÓN, en cualquier orden.</p>
       <div class="campo-editar">
         <label for="excelArchivo">Archivo Excel (.xlsx / .xls)</label>
         <input type="file" id="excelArchivo" accept=".xlsx,.xls">
@@ -950,7 +936,7 @@ tr.fila-inconsistente td{background:#fdf3e3!important;}
       <p class="subt" id="excelResumen"></p>
       <div class="contenedor-tabla" style="max-height:360px;">
         <table class="datos" id="tablaPreviewExcel">
-          <thead><tr><th></th><th>ROL</th><th>AÑO</th><th>LIBRO</th><th>FECHA INGRESO</th><th>OBSERVACION</th><th>FECHA RELACIÓN</th><th>Estado</th></tr></thead>
+          <thead><tr><th></th><th>ROL</th><th>AÑO</th><th>LIBRO</th><th>MATERIA</th><th>TIPO</th><th>COMPLEJIDAD</th><th>ESTADO</th><th>RIJA</th><th>SUSPENSIÓN</th><th>DÍAS PARA REANUDAR</th><th>FECHA INGRESO</th><th>FECHA RELACIÓN</th><th>Validación</th></tr></thead>
           <tbody id="cuerpoPreviewExcel"></tbody>
         </table>
       </div>
@@ -2454,43 +2440,6 @@ break;case"<bookViews":;case"<bookViews>":;case"</bookViews>":break;case"<workbo
     var texto = d.toLocaleDateString('es-CL', { month:'long', year:'numeric' });
     return texto.charAt(0).toUpperCase()+texto.slice(1);
   }
-  (function fijarMesPorDefecto(){
-    var input = document.getElementById('mesIngesta');
-    var hoy = new Date();
-    input.value = hoy.getFullYear()+'-'+('0'+(hoy.getMonth()+1)).slice(-2);
-  })();
-
-  document.getElementById('btnIngestar').addEventListener('click', function(){
-    var mesInput = document.getElementById('mesIngesta').value;
-    if(!mesInput){ mostrarToast('Selecciona primero el mes que vas a ingresar (ej: Agosto 2026).', 'error'); return; }
-    var filas = parsearPegado(document.getElementById('pasteIngesta').value);
-    if(filas.length===0){ document.getElementById('resultadoIngesta').innerHTML='<p class="aviso">Pega al menos una fila.</p>'; return; }
-
-    var partesMes = mesInput.split('-'), anioMes = partesMes[0], mesNum = partesMes[1];
-    var dentro = [], fuera = 0;
-    filas.forEach(function(f){
-      var m = String(f[3]||'').trim().match(/^(\d{1,2})-(\d{1,2})-(\d{4})$/);
-      var coincide = m && m[3]===anioMes && ('0'+m[2]).slice(-2)===mesNum;
-      if(coincide) dentro.push(f); else fuera++;
-    });
-    if(dentro.length===0){
-      mostrarToast('Ninguna fila pegada tiene FECHA INGRESO en '+etiquetaMes(mesInput)+'. Revisa el mes elegido o el formato de fecha (dd-mm-aaaa).', 'error');
-      return;
-    }
-    var objetos = dentro.map(function(f){
-      return { rol:f[0]||'', anio:f[1]||'', libro:f[2]||'', fechaIngreso:f[3]||'', observacion:f[4]||'', fechaRelacion:f[5]||'' };
-    });
-    llamarServicio({accion:'ingestarNuevas', filas: objetos}).then(function(datos){
-      document.getElementById('resultadoIngesta').innerHTML =
-        '<p class="aviso">Mes: <b>'+etiquetaMes(mesInput)+'</b> · Ingresadas: <b>'+datos.agregadas+'</b>'+
-        (datos.duplicadas>0 ? ' (de las cuales <b>'+datos.duplicadas+'</b> ya existían — quedaron destacadas en Stock para revisión)' : '')+
-        (fuera>0 ? ' · Fuera de ese mes (no se tocaron): <b>'+fuera+'</b>' : '')+'</p>';
-      document.getElementById('pasteIngesta').value='';
-      return llamarServicio({accion:'listar'});
-    }).then(function(datos){ estado.causas=datos.causas; actualizarResumenHeader(); renderStock(); renderReportesLocal(); })
-    .catch(mostrarErrorGlobal);
-  });
-
   document.getElementById('btnCargarStock').addEventListener('click', function(){
     var filas = parsearPegado(document.getElementById('pasteStock').value);
     var objetos = filas.map(function(f){ return { rol:f[0]||'', anio:f[1]||'', libro:f[2]||'', materia:f[3]||'' }; });
@@ -2682,7 +2631,14 @@ break;case"<bookViews":;case"<bookViews>":;case"</bookViews>":break;case"<workbo
         libro: buscarColumnaExcel(headers,'LIBRO'),
         fechaIngreso: buscarColumnaExcel(headers,'FECHAINGRESO'),
         observacion: buscarColumnaExcel(headers,'OBSERVACION'),
-        fechaRelacion: buscarColumnaExcel(headers,'FECHARELACION')
+        fechaRelacion: buscarColumnaExcel(headers,'FECHARELACION'),
+        materia: buscarColumnaExcel(headers,'MATERIA'),
+        tipo: buscarColumnaExcel(headers,'TIPO'),
+        complejidad: buscarColumnaExcel(headers,'COMPLEJIDAD'),
+        estado: buscarColumnaExcel(headers,'ESTADO'),
+        rija: buscarColumnaExcel(headers,'RIJA'),
+        fechaSuspension: buscarColumnaExcel(headers,'SUSPENSION'),
+        diasSuspension: (function(){ var i=buscarColumnaExcel(headers,'DIASPARAREANUDAR'); return i>-1?i:buscarColumnaExcel(headers,'DIAS'); })()
       };
       var faltantes = [];
       if(col.rol===-1) faltantes.push('ROL');
@@ -2707,7 +2663,14 @@ break;case"<bookViews":;case"<bookViews>":;case"</bookViews>":break;case"<workbo
           libro: String(f[col.libro]||'').trim(),
           fechaIngreso: fechaExcelADDMMYYYY(f[col.fechaIngreso]),
           observacion: col.observacion>-1 ? String(f[col.observacion]||'').trim() : '',
-          fechaRelacion: col.fechaRelacion>-1 ? fechaExcelADDMMYYYY(f[col.fechaRelacion]) : ''
+          fechaRelacion: col.fechaRelacion>-1 ? fechaExcelADDMMYYYY(f[col.fechaRelacion]) : '',
+          materia: col.materia>-1 ? String(f[col.materia]||'').trim() : '',
+          tipo: col.tipo>-1 ? String(f[col.tipo]||'').trim() : '',
+          complejidad: col.complejidad>-1 ? String(f[col.complejidad]||'').trim() : '',
+          estado: col.estado>-1 ? String(f[col.estado]||'').trim() : '',
+          rija: col.rija>-1 ? String(f[col.rija]||'').trim() : '',
+          fechaSuspension: col.fechaSuspension>-1 ? fechaExcelADDMMYYYY(f[col.fechaSuspension]) : '',
+          diasSuspension: col.diasSuspension>-1 ? String(f[col.diasSuspension]||'').trim() : ''
         };
         var m = obj.fechaIngreso.match(/^(\d{1,2})-(\d{1,2})-(\d{4})$/);
         var coincideMes = m && m[3]===anioMes && ('0'+m[2]).slice(-2)===mesNum;
@@ -2753,7 +2716,9 @@ break;case"<bookViews":;case"<bookViews>":;case"</bookViews>":break;case"<workbo
         return '<tr class="'+clase+'">'+
           '<td><input type="checkbox" data-idx="'+idx+'" class="check-fila-excel" '+(r.marcada?'checked':'')+'></td>'+
           '<td>'+escaparAtributo(r.obj.rol)+'</td><td>'+escaparAtributo(r.obj.anio)+'</td><td>'+escaparAtributo(r.obj.libro)+'</td>'+
-          '<td>'+escaparAtributo(r.obj.fechaIngreso)+'</td><td>'+escaparAtributo(r.obj.observacion)+'</td><td>'+escaparAtributo(r.obj.fechaRelacion)+'</td>'+
+          '<td>'+escaparAtributo(r.obj.materia)+'</td><td>'+escaparAtributo(r.obj.tipo)+'</td><td>'+escaparAtributo(r.obj.complejidad)+'</td>'+
+          '<td>'+escaparAtributo(r.obj.estado)+'</td><td>'+escaparAtributo(r.obj.rija)+'</td><td>'+escaparAtributo(r.obj.fechaSuspension)+'</td><td>'+escaparAtributo(r.obj.diasSuspension)+'</td>'+
+          '<td>'+escaparAtributo(r.obj.fechaIngreso)+'</td><td>'+escaparAtributo(r.obj.fechaRelacion)+'</td>'+
           '<td>'+badge+'</td></tr>';
       }).join('');
 
