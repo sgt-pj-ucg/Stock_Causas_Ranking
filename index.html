@@ -1087,11 +1087,19 @@ break;case"<bookViews":;case"<bookViews>":;case"</bookViews>":break;case"<workbo
   function llamarServicio(cuerpo){
     if(!hayServicio()) return Promise.reject(new Error('Configura la URL del servicio en "Configuración".'));
     cuerpo.clave = almacen.clave;
-    var permiteReintento = !!ACCIONES_SOLO_LECTURA[cuerpo.accion];
-    return intentarLlamadaServicio(cuerpo, permiteReintento ? 1 : 0);
+    var soloLectura = !!ACCIONES_SOLO_LECTURA[cuerpo.accion];
+    return intentarLlamadaServicio(cuerpo, { intentosRestantes: soloLectura ? 3 : 2, soloLectura: soloLectura, espera: 900 });
   }
 
-  function intentarLlamadaServicio(cuerpo, reintentosRestantes){
+  /** Google a veces falla en entregar la respuesta ANTES de que nuestro script llegue
+   *  a ejecutarse (típico: el "exec" responde 404/redirect roto, o el pedido nunca vuelve
+   *  y se agota el tiempo) — eso confirmado en pruebas: hasta la acción "probar" (que no
+   *  toca la planilla) falla así de forma intermitente. En ese caso reintentar SIEMPRE es
+   *  seguro, incluso para una escritura, porque el script nunca llegó a correr.
+   *  Si en cambio el script sí corrió y devolvió un error propio (datos.ok===false), eso
+   *  no se reintenta para escrituras: podría haber aplicado el cambio y reintentar lo
+   *  duplicaría (por ejemplo, insertar la misma fila dos veces). */
+  function intentarLlamadaServicio(cuerpo, contexto){
     var controlador = ('AbortController' in window) ? new AbortController() : null;
     var venceEn = setTimeout(function(){ if(controlador) controlador.abort(); }, 25000);
     return fetch(almacen.urlServicio, {
@@ -1102,7 +1110,7 @@ break;case"<bookViews":;case"<bookViews>":;case"</bookViews>":break;case"<workbo
       signal: controlador ? controlador.signal : undefined
     }).then(function(r){
       clearTimeout(venceEn);
-      if(!r.ok) throw new Error('El servicio respondió '+r.status+'.');
+      if(!r.ok){ var e = new Error('El servicio respondió '+r.status+'.'); e.previoAEjecucion = true; throw e; }
       return r.json();
     }).then(function(datos){
       if(!datos || datos.ok !== true) throw new Error((datos && datos.error) || 'Respuesta inesperada del servicio.');
@@ -1110,11 +1118,23 @@ break;case"<bookViews":;case"<bookViews>":;case"</bookViews>":break;case"<workbo
     }).catch(function(err){
       clearTimeout(venceEn);
       var esTimeout = err && err.name === 'AbortError';
-      if(reintentosRestantes > 0){
-        return new Promise(function(resolve){ setTimeout(resolve, 1200); })
-          .then(function(){ return intentarLlamadaServicio(cuerpo, reintentosRestantes-1); });
+      var falloAntesDeEjecutar = esTimeout || !!err.previoAEjecucion;
+      var puedeReintentar = contexto.intentosRestantes > 0 && (contexto.soloLectura || falloAntesDeEjecutar);
+      if(puedeReintentar){
+        var espera = contexto.espera;
+        return new Promise(function(resolve){ setTimeout(resolve, espera); }).then(function(){
+          return intentarLlamadaServicio(cuerpo, {
+            intentosRestantes: contexto.intentosRestantes - 1,
+            soloLectura: contexto.soloLectura,
+            espera: Math.min(espera * 2, 6000)
+          });
+        });
       }
-      throw new Error(esTimeout ? 'El servicio no respondió a tiempo (Google Apps Script puede demorar varios segundos con esta cantidad de causas). Intenta de nuevo.' : err.message);
+      throw new Error(
+        esTimeout ? 'Google no respondió a tiempo. Suele ser una falla puntual del servicio de Google (no de la plataforma) — intenta de nuevo en unos segundos.' :
+        falloAntesDeEjecutar ? 'Google no pudo abrir la planilla en este intento (falla puntual de Google). Intenta de nuevo en unos segundos.' :
+        err.message
+      );
     });
   }
 
