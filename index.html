@@ -559,7 +559,13 @@ tr.fila-inconsistente td{background:#fdf3e3!important;}
       </div>
       <div class="tarjeta">
         <h2>Actualizar listado "Stock" (para cruce de materia)</h2>
-        <p class="subt">Pega el listado de referencia con columnas: <b>ROL · AÑO · LIBRO · MATERIA</b>. Actualiza la materia de las que ya existen en Stock y agrega las que falten — no borra nada.</p>
+        <p class="subt">Es el listado completo de referencia (no está atado a un mes en particular). Sube el Excel con columnas
+        <b>ROL · AÑO · LIBRO · MATERIA</b> — se identifican por nombre sin importar el orden — o pega filas manualmente.
+        Actualiza la materia de las que ya existen en Stock y agrega las que falten — no borra nada.</p>
+        <div class="fila-acciones">
+          <button class="btn btn-primario" id="btnAbrirExcelStock">Cargar planilla Excel (.xlsx)</button>
+        </div>
+        <p class="subt" style="margin-top:var(--e3);">Alternativa rápida: pegar filas manualmente.</p>
         <textarea class="paste" id="pasteStock" placeholder="166&#9;2022&#9;Civil&#9;Pesca y acuicultura,infracciones a la Ley de"></textarea>
         <div class="fila-acciones" style="margin-top:var(--e3)">
           <button class="btn btn-secundario" id="btnCargarStock">Actualizar listado Stock</button>
@@ -951,6 +957,36 @@ tr.fila-inconsistente td{background:#fdf3e3!important;}
       <div class="popup-acciones">
         <button class="btn btn-secundario" id="btnCancelarExcel2">Cancelar</button>
         <button class="btn btn-primario" id="btnConfirmarExcel">Confirmar importación</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="modalExcelStock" class="popup-fondo oculto">
+  <div class="popup-caja popup-caja-ancha">
+    <h3>Cargar planilla Excel — listado Stock</h3>
+    <div id="excelStockPaso1">
+      <p class="subt">Selecciona el archivo con el listado completo de referencia. Como es el stock completo, no se pide mes: se analizan todas las filas.</p>
+      <div class="campo-editar">
+        <label for="excelStockArchivo">Archivo Excel (.xlsx / .xls)</label>
+        <input type="file" id="excelStockArchivo" accept=".xlsx,.xls">
+      </div>
+      <div class="popup-acciones">
+        <button class="btn btn-secundario" id="btnCancelarExcelStock1">Cancelar</button>
+        <button class="btn btn-primario" id="btnAnalizarExcelStock">Analizar archivo</button>
+      </div>
+    </div>
+    <div id="excelStockPaso2" class="oculto">
+      <p class="subt" id="excelStockResumen"></p>
+      <div class="contenedor-tabla" style="max-height:360px;">
+        <table class="datos" id="tablaPreviewExcelStock">
+          <thead><tr><th></th><th>ROL</th><th>AÑO</th><th>LIBRO</th><th>MATERIA</th><th>Estado</th></tr></thead>
+          <tbody id="cuerpoPreviewExcelStock"></tbody>
+        </table>
+      </div>
+      <div class="popup-acciones">
+        <button class="btn btn-secundario" id="btnCancelarExcelStock2">Cancelar</button>
+        <button class="btn btn-primario" id="btnConfirmarExcelStock">Confirmar actualización</button>
       </div>
     </div>
   </div>
@@ -2465,6 +2501,119 @@ break;case"<bookViews":;case"<bookViews>":;case"</bookViews>":break;case"<workbo
         document.getElementById('pasteStock').value='';
       }).catch(mostrarErrorGlobal);
     });
+  });
+
+  /* ================= ACTUALIZAR STOCK VIA EXCEL (sin mes: es el listado completo) ================= */
+  var modalExcelStock = document.getElementById('modalExcelStock');
+  var filasPreviewExcelStock = [];
+
+  function abrirModalExcelStock(){
+    document.getElementById('excelStockArchivo').value='';
+    document.getElementById('excelStockPaso1').classList.remove('oculto');
+    document.getElementById('excelStockPaso2').classList.add('oculto');
+    filasPreviewExcelStock = [];
+    modalExcelStock.classList.remove('oculto');
+  }
+  function cerrarModalExcelStock(){ modalExcelStock.classList.add('oculto'); }
+
+  document.getElementById('btnAbrirExcelStock').addEventListener('click', abrirModalExcelStock);
+  document.getElementById('btnCancelarExcelStock1').addEventListener('click', cerrarModalExcelStock);
+  document.getElementById('btnCancelarExcelStock2').addEventListener('click', cerrarModalExcelStock);
+  modalExcelStock.addEventListener('click', function(e){ if(e.target===modalExcelStock) cerrarModalExcelStock(); });
+
+  document.getElementById('btnAnalizarExcelStock').addEventListener('click', function(){
+    var archivo = document.getElementById('excelStockArchivo').files[0];
+    if(!archivo){ mostrarToast('Selecciona un archivo Excel.', 'error'); return; }
+
+    var lector = new FileReader();
+    lector.onload = function(e){
+      var libro;
+      try{
+        libro = XLSX.read(new Uint8Array(e.target.result), {type:'array', cellDates:true});
+      }catch(err){
+        mostrarToast('No se pudo leer el archivo. ¿Es un Excel válido (.xlsx/.xls)?', 'error');
+        return;
+      }
+      var hoja = libro.Sheets[libro.SheetNames[0]];
+      var filas = XLSX.utils.sheet_to_json(hoja, {header:1, defval:''});
+      filas = filas.filter(function(f){ return f.some(function(c){ return String(c).trim()!==''; }); });
+      if(filas.length<2){ mostrarToast('El archivo no tiene filas de datos.', 'error'); return; }
+
+      var headers = filas[0].map(String);
+      var col = {
+        rol: buscarColumnaExcel(headers,'ROL'),
+        anio: (function(){ var i=buscarColumnaExcel(headers,'ANIO'); return i>-1?i:buscarColumnaExcel(headers,'ANO'); })(),
+        libro: buscarColumnaExcel(headers,'LIBRO'),
+        materia: buscarColumnaExcel(headers,'MATERIA')
+      };
+      var faltantes = [];
+      if(col.rol===-1) faltantes.push('ROL');
+      if(col.libro===-1) faltantes.push('LIBRO');
+      if(col.materia===-1) faltantes.push('MATERIA');
+      if(faltantes.length>0){
+        mostrarToast('No se encontraron estas columnas en el archivo: '+faltantes.join(', ')+'. Revisa los encabezados.', 'error');
+        return;
+      }
+
+      var dentro = [];
+      for(var i=1;i<filas.length;i++){
+        var f = filas[i];
+        var obj = {
+          rol: String(f[col.rol]||'').trim(),
+          anio: col.anio>-1 ? String(f[col.anio]||'').trim() : '',
+          libro: String(f[col.libro]||'').trim(),
+          materia: String(f[col.materia]||'').trim()
+        };
+        var motivos = [];
+        if(!obj.rol) motivos.push('Falta ROL');
+        if(!obj.libro) motivos.push('Falta LIBRO');
+        var esInconsistente = motivos.length>0;
+        dentro.push({ obj:obj, inconsistente:esInconsistente, motivos:motivos, marcada: !esInconsistente });
+      }
+
+      filasPreviewExcelStock = dentro;
+      renderPreviewExcelStock();
+    };
+    lector.readAsArrayBuffer(archivo);
+  });
+
+  function renderPreviewExcelStock(){
+    var cuerpo = document.getElementById('cuerpoPreviewExcelStock');
+    var inc = filasPreviewExcelStock.filter(function(r){return r.inconsistente;}).length;
+    document.getElementById('excelStockResumen').innerHTML =
+      'Filas leídas: <b>'+filasPreviewExcelStock.length+'</b>'+
+      ' · Con datos incompletos (revisar antes de incluir): <b>'+inc+'</b>'+
+      ' · Se actualizará la materia de las que ya existan en Stock y se agregarán las que falten.';
+
+    cuerpo.innerHTML = filasPreviewExcelStock.map(function(r, idx){
+      var badge = r.inconsistente
+        ? '<span class="badge-estado-fila badge-inc" title="'+escaparAtributo(r.motivos.join('; '))+'">Revisar: '+escaparAtributo(r.motivos.join(', '))+'</span>'
+        : '<span class="badge-estado-fila badge-ok">OK</span>';
+      var clase = r.inconsistente ? 'fila-inconsistente' : '';
+      return '<tr class="'+clase+'">'+
+        '<td><input type="checkbox" data-idx="'+idx+'" class="check-fila-excel-stock" '+(r.marcada?'checked':'')+'></td>'+
+        '<td>'+escaparAtributo(r.obj.rol)+'</td><td>'+escaparAtributo(r.obj.anio)+'</td><td>'+escaparAtributo(r.obj.libro)+'</td>'+
+        '<td>'+escaparAtributo(r.obj.materia)+'</td><td>'+badge+'</td></tr>';
+    }).join('');
+
+    Array.prototype.forEach.call(cuerpo.querySelectorAll('.check-fila-excel-stock'), function(chk){
+      chk.addEventListener('change', function(){ filasPreviewExcelStock[Number(chk.getAttribute('data-idx'))].marcada = chk.checked; });
+    });
+
+    document.getElementById('excelStockPaso1').classList.add('oculto');
+    document.getElementById('excelStockPaso2').classList.remove('oculto');
+  }
+
+  document.getElementById('btnConfirmarExcelStock').addEventListener('click', function(){
+    var seleccionadas = filasPreviewExcelStock.filter(function(r){ return r.marcada; }).map(function(r){ return r.obj; });
+    if(seleccionadas.length===0){ mostrarToast('No hay filas marcadas para actualizar.', 'error'); return; }
+    var btn = document.getElementById('btnConfirmarExcelStock');
+    btn.disabled = true; btn.textContent='Actualizando...';
+    llamarServicio({accion:'cargarStock', filas: seleccionadas}).then(function(datos){
+      document.getElementById('resultadoStock').innerHTML = '<p class="aviso">Actualizadas: <b>'+datos.actualizadas+'</b> · Agregadas: <b>'+datos.agregadas+'</b>.</p>';
+      mostrarToast('Listado Stock actualizado.', 'exito');
+      cerrarModalExcelStock();
+    }).catch(mostrarErrorGlobal).finally(function(){ btn.disabled=false; btn.textContent='Confirmar actualización'; });
   });
 
   /* ================= INGESTA VIA EXCEL (carga de archivo, columnas por nombre) ================= */
