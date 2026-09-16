@@ -1149,10 +1149,19 @@ break;case"<bookViews":;case"<bookViews>":;case"</bookViews>":break;case"<workbo
   function intentarEntrar(){
     var clave = document.getElementById('inputClave').value.trim();
     if(!clave){ mostrarErrorLogin('Ingresa la clave.'); return; }
+    mostrarErrorLogin('');
+    var btn = document.getElementById('btnEntrar');
+    btn.disabled = true; btn.textContent = 'Verificando...';
     almacen.clave = clave;
-    sessionStorage.setItem('stockCausas.clave', clave);
-    document.getElementById('inputUrlServicio').value = almacen.urlServicio;
-    mostrarBienvenida();
+    llamarServicio({accion:'probar'}).then(function(){
+      sessionStorage.setItem('stockCausas.clave', clave);
+      document.getElementById('inputUrlServicio').value = almacen.urlServicio;
+      mostrarBienvenida();
+    }).catch(function(err){
+      mostrarErrorLogin(err.message);
+    }).finally(function(){
+      btn.disabled = false; btn.textContent = 'Entrar';
+    });
   }
 
   function mostrarErrorLogin(msj){ document.getElementById('errorLogin').textContent = msj; }
