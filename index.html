@@ -162,7 +162,8 @@ button:disabled{opacity:.5;cursor:not-allowed;}
 button.btn-header{display:inline-flex;align-items:center;gap:6px;}
 button.btn-header .icono-btn{width:14px;height:14px;flex:none;}
 
-input.buscador,select.filtro{padding:10px 12px;border:1px solid var(--borde);border-radius:8px;}
+input.buscador,select.filtro,input.filtro{padding:10px 12px;border:1px solid var(--borde);border-radius:8px;}
+.filtro-fecha-label{font-size:12.5px;color:var(--texto-suave);white-space:nowrap;}
 input.buscador{min-width:220px;flex:1;width:100%;}
 .buscador-cont{position:relative;flex:1;min-width:220px;display:flex;}
 .buscador-cont input.buscador{padding-right:32px;}
@@ -429,7 +430,8 @@ tr.fila-clicable{cursor:pointer;}
   width:min(360px,94vw);padding:var(--e4);}
 .popup-caja h3{margin:0 0 4px;font-size:15px;color:var(--azul-profundo);}
 .popup-caja .subt{margin:0 0 var(--e3);color:var(--texto-suave);font-size:12.5px;}
-.popup-acciones{display:flex;justify-content:flex-end;gap:var(--e2);margin-top:var(--e3);}
+.popup-acciones{display:flex;justify-content:flex-end;gap:var(--e2);margin-top:var(--e3);align-items:center;}
+.contador-marcadas{margin-right:auto;font-size:13px;font-weight:600;color:var(--azul-profundo);}
 .popup-caja-ancha{width:min(920px,96vw);max-height:90vh;overflow-y:auto;}
 tr.fila-inconsistente td{background:#fdf3e3!important;}
 .badge-estado-fila{display:inline-block;font-size:11px;padding:2px 7px;border-radius:10px;font-weight:600;white-space:nowrap;}
@@ -600,6 +602,10 @@ tr.fila-inconsistente td{background:#fdf3e3!important;}
           <select class="filtro" id="filtroLibroStock">
             <option value="">Todos los libros</option>
           </select>
+          <label class="filtro-fecha-label" for="filtroRelacionDesde">Relación desde</label>
+          <input type="month" class="filtro" id="filtroRelacionDesde">
+          <label class="filtro-fecha-label" for="filtroRelacionHasta">hasta</label>
+          <input type="month" class="filtro" id="filtroRelacionHasta">
           <button class="btn btn-secundario" id="btnDuplicados"></button>
           <button class="btn btn-secundario" id="btnActualizarMaterias"><svg class="icono-btn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.07 0l1.93-1.93a5 5 0 0 0-7.07-7.07L10.5 5.5"/><path d="M14 11a5 5 0 0 0-7.07 0L5 12.93a5 5 0 0 0 7.07 7.07l1.43-1.43"/></svg> Actualizar materias desde Stock</button>
           <button class="btn btn-secundario" id="btnLimpiarFiltrosStock">Limpiar</button>
@@ -941,6 +947,7 @@ tr.fila-inconsistente td{background:#fdf3e3!important;}
         </table>
       </div>
       <div class="popup-acciones">
+        <span class="contador-marcadas" id="contadorMarcadasExcel"></span>
         <button class="btn btn-secundario" id="btnCancelarExcel2">Cancelar</button>
         <button class="btn btn-primario" id="btnConfirmarExcel">Confirmar importación</button>
       </div>
@@ -2030,13 +2037,28 @@ break;case"<bookViews":;case"<bookViews>":;case"</bookViews>":break;case"<workbo
     if(libros.indexOf(valorActual) > -1) selectEl.value = valorActual;
   }
 
+  /** 'dd-mm-aaaa' -> 'aaaa-mm' (para comparar contra un <input type="month">). */
+  function mesAnioDeFecha(fechaTexto){
+    var m = String(fechaTexto||'').trim().match(/^(\d{1,2})-(\d{1,2})-(\d{4})$/);
+    if(!m) return null;
+    return m[3]+'-'+('0'+m[2]).slice(-2);
+  }
+
   function causasFiltradas(){
     var texto = (document.getElementById('buscadorStock').value||'').toLowerCase();
     var filtroEstado = document.getElementById('filtroEstadoStock').value;
     var filtroLibro = document.getElementById('filtroLibroStock').value;
+    var relacionDesde = document.getElementById('filtroRelacionDesde').value;
+    var relacionHasta = document.getElementById('filtroRelacionHasta').value;
     return estado.causas.filter(function(c){
       if(filtroEstado && c.estado!==filtroEstado) return false;
       if(filtroLibro && String(c.libro||'').trim()!==filtroLibro) return false;
+      if(relacionDesde || relacionHasta){
+        var mesAnio = mesAnioDeFecha(c.fechaRelacion);
+        if(!mesAnio) return false;
+        if(relacionDesde && mesAnio < relacionDesde) return false;
+        if(relacionHasta && mesAnio > relacionHasta) return false;
+      }
       if(!texto) return true;
       var pack = [c.rol,c.anio,c.libro,c.materia,c.tipo].join(' ').toLowerCase();
       return pack.indexOf(texto) > -1;
@@ -2069,12 +2091,17 @@ break;case"<bookViews":;case"<bookViews>":;case"</bookViews>":break;case"<workbo
     return html;
   }
 
+  /** Etiquetas cortas solo para no romper el ancho de la tabla Stock — el
+   *  VALOR real (usado en filtros, reportes, etc.) sigue siendo el texto
+   *  completo; esto solo cambia lo que se ve escrito en el <option>. */
+  var ETIQUETA_ESTADO_CORTA = { 'Suspendida Procedimiento': 'Susp. Proced.' };
+
   function construirSelectEstado(c){
     var valor = c.estado || 'Disponible';
     var clase = CLASE_CHIP_ESTADO[valor] || 'chip-tramite';
     var html = '<select class="sel-inline sel-estado '+clase+'" data-id="'+c.idFila+'">';
     OPCIONES_ESTADO.forEach(function(o){
-      html += '<option value="'+o+'" '+(o===valor?'selected':'')+'>'+o+'</option>';
+      html += '<option value="'+o+'" '+(o===valor?'selected':'')+'>'+(ETIQUETA_ESTADO_CORTA[o]||o)+'</option>';
     });
     html += '</select>';
     return html;
@@ -2086,7 +2113,7 @@ break;case"<bookViews":;case"<bookViews>":;case"</bookViews>":break;case"<workbo
     if(soloDuplicados) lista = lista.filter(function(c){return duplicados[c.idFila];});
 
     var tbody = document.querySelector('#tablaStock tbody');
-    tbody.innerHTML = lista.slice(0,500).map(function(c){
+    tbody.innerHTML = lista.map(function(c){
       var esDup = !!duplicados[c.idFila];
       var marcada = !!estado.seleccionStaging[c.idFila];
       var tieneRija = String(c.rija||'').toUpperCase().indexOf('RIJA') > -1;
@@ -2189,12 +2216,16 @@ break;case"<bookViews":;case"<bookViews>":;case"</bookViews>":break;case"<workbo
   });
   document.getElementById('filtroEstadoStock').addEventListener('change', renderStock);
   document.getElementById('filtroLibroStock').addEventListener('change', renderStock);
+  document.getElementById('filtroRelacionDesde').addEventListener('change', renderStock);
+  document.getElementById('filtroRelacionHasta').addEventListener('change', renderStock);
   document.getElementById('btnLimpiarFiltrosStock').addEventListener('click', function(){
     var input = document.getElementById('buscadorStock');
     input.value='';
     actualizarBotonLimpiarBuscador(input);
     document.getElementById('filtroEstadoStock').value='';
     document.getElementById('filtroLibroStock').value='';
+    document.getElementById('filtroRelacionDesde').value='';
+    document.getElementById('filtroRelacionHasta').value='';
     soloDuplicados=false;
     document.getElementById('btnDuplicados').innerHTML = ICONOS.duplicado+' Ver duplicados';
     renderStock();
@@ -2755,11 +2786,18 @@ break;case"<bookViews":;case"<bookViews>":;case"</bookViews>":break;case"<workbo
     lector.readAsArrayBuffer(archivo);
   });
 
+  function actualizarContadorMarcadasExcel(){
+    var marcadas = filasPreviewExcel.filter(function(r){ return r.marcada; }).length;
+    document.getElementById('contadorMarcadasExcel').textContent =
+      marcadas+' de '+filasPreviewExcel.length+' filas marcadas para importar';
+  }
+
   function renderPreviewExcel(fuera, mesInput, nombreHoja){
     var cuerpo = document.getElementById('cuerpoPreviewExcel');
     if(filasPreviewExcel.length===0){
       document.getElementById('excelResumen').innerHTML = 'Ninguna fila de la hoja "'+escaparAtributo(nombreHoja)+'" tiene FECHA RELACIÓN en '+etiquetaMes(mesInput)+'. Revisa el mes elegido.';
       cuerpo.innerHTML = '';
+      document.getElementById('contadorMarcadasExcel').textContent = '';
     } else {
       var dup = filasPreviewExcel.filter(function(r){return r.duplicado;}).length;
       var inc = filasPreviewExcel.filter(function(r){return r.inconsistente;}).length;
@@ -2784,8 +2822,12 @@ break;case"<bookViews":;case"<bookViews>":;case"</bookViews>":break;case"<workbo
       }).join('');
 
       Array.prototype.forEach.call(cuerpo.querySelectorAll('.check-fila-excel'), function(chk){
-        chk.addEventListener('change', function(){ filasPreviewExcel[Number(chk.getAttribute('data-idx'))].marcada = chk.checked; });
+        chk.addEventListener('change', function(){
+          filasPreviewExcel[Number(chk.getAttribute('data-idx'))].marcada = chk.checked;
+          actualizarContadorMarcadasExcel();
+        });
       });
+      actualizarContadorMarcadasExcel();
     }
     document.getElementById('excelPaso1').classList.add('oculto');
     document.getElementById('excelPaso2').classList.remove('oculto');
