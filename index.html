@@ -2517,24 +2517,21 @@ break;case"<bookViews":;case"<bookViews>":;case"</bookViews>":break;case"<workbo
       filas = filas.filter(function(f){ return f.some(function(c){ return String(c).trim()!==''; }); });
       if(filas.length<2){ mostrarToast('El archivo no tiene filas de datos.', 'error'); return; }
 
-      var headers = filas[0].map(String);
+      var filaEncabezados = detectarFilaEncabezados(filas, ['ROL','LIBRO','MATERIA']);
+      if(filaEncabezados===-1){
+        mostrarToast('No se encontraron las columnas ROL, LIBRO y MATERIA en las primeras filas del archivo. Revisa que esos encabezados existan (pueden tener otras columnas antes, no es necesario que sean la fila 1).', 'error');
+        return;
+      }
+      var headers = filas[filaEncabezados].map(String);
       var col = {
         rol: buscarColumnaExcel(headers,'ROL'),
         anio: (function(){ var i=buscarColumnaExcel(headers,'ANIO'); return i>-1?i:buscarColumnaExcel(headers,'ANO'); })(),
         libro: buscarColumnaExcel(headers,'LIBRO'),
         materia: buscarColumnaExcel(headers,'MATERIA')
       };
-      var faltantes = [];
-      if(col.rol===-1) faltantes.push('ROL');
-      if(col.libro===-1) faltantes.push('LIBRO');
-      if(col.materia===-1) faltantes.push('MATERIA');
-      if(faltantes.length>0){
-        mostrarToast('No se encontraron estas columnas en el archivo: '+faltantes.join(', ')+'. Revisa los encabezados.', 'error');
-        return;
-      }
 
       var dentro = [];
-      for(var i=1;i<filas.length;i++){
+      for(var i=filaEncabezados+1;i<filas.length;i++){
         var f = filas[i];
         var obj = {
           rol: String(f[col.rol]||'').trim(),
@@ -2609,6 +2606,25 @@ break;case"<bookViews":;case"<bookViews>":;case"</bookViews>":break;case"<workbo
     for(var j=0;j<norms.length;j++){ if(norms[j].indexOf(b)>-1) return j; }
     return -1;
   }
+
+  /** Muchas planillas de origen (como el "Stock" original) traen fila(s) de título
+   *  o de filtro ANTES de la fila real de encabezados — no siempre son la fila 1.
+   *  Se revisan las primeras filas del archivo y se usa la primera que contenga
+   *  TODAS las columnas requeridas (cada una puede tener nombres alternativos,
+   *  ej. ['ANIO','ANO']). Devuelve el índice de esa fila, o -1 si no se encontró
+   *  en ninguna de las primeras `maxFilas`. */
+  function detectarFilaEncabezados(filas, requeridos, maxFilas){
+    var limite = Math.min(filas.length, maxFilas || 15);
+    for(var i=0; i<limite; i++){
+      var headers = filas[i].map(String);
+      var todasEncontradas = requeridos.every(function(req){
+        var alternativas = Array.isArray(req) ? req : [req];
+        return alternativas.some(function(alt){ return buscarColumnaExcel(headers, alt) > -1; });
+      });
+      if(todasEncontradas) return i;
+    }
+    return -1;
+  }
   function fechaExcelADDMMYYYY(v){
     if(v instanceof Date && !isNaN(v)){
       var dd=('0'+v.getDate()).slice(-2), mm=('0'+(v.getMonth()+1)).slice(-2);
@@ -2653,7 +2669,12 @@ break;case"<bookViews":;case"<bookViews>":;case"</bookViews>":break;case"<workbo
       filas = filas.filter(function(f){ return f.some(function(c){ return String(c).trim()!==''; }); });
       if(filas.length<2){ mostrarToast('El archivo no tiene filas de datos.', 'error'); return; }
 
-      var headers = filas[0].map(String);
+      var filaEncabezados = detectarFilaEncabezados(filas, ['ROL','LIBRO',['ANIO','ANO'],'FECHAINGRESO']);
+      if(filaEncabezados===-1){
+        mostrarToast('No se encontraron las columnas ROL, AÑO, LIBRO y FECHA INGRESO en las primeras filas del archivo. Revisa que esos encabezados existan (pueden tener otras columnas antes, no es necesario que sean la fila 1).', 'error');
+        return;
+      }
+      var headers = filas[filaEncabezados].map(String);
       var col = {
         rol: buscarColumnaExcel(headers,'ROL'),
         anio: (function(){ var i=buscarColumnaExcel(headers,'ANIO'); return i>-1?i:buscarColumnaExcel(headers,'ANO'); })(),
@@ -2669,22 +2690,13 @@ break;case"<bookViews":;case"<bookViews>":;case"</bookViews>":break;case"<workbo
         fechaSuspension: buscarColumnaExcel(headers,'SUSPENSION'),
         diasSuspension: (function(){ var i=buscarColumnaExcel(headers,'DIASPARAREANUDAR'); return i>-1?i:buscarColumnaExcel(headers,'DIAS'); })()
       };
-      var faltantes = [];
-      if(col.rol===-1) faltantes.push('ROL');
-      if(col.anio===-1) faltantes.push('AÑO');
-      if(col.libro===-1) faltantes.push('LIBRO');
-      if(col.fechaIngreso===-1) faltantes.push('FECHA INGRESO');
-      if(faltantes.length>0){
-        mostrarToast('No se encontraron estas columnas en el archivo: '+faltantes.join(', ')+'. Revisa los encabezados.', 'error');
-        return;
-      }
 
       var partesMes = mesInput.split('-'), anioMes = partesMes[0], mesNum = partesMes[1];
       var duplicadosActuales = {};
       estado.causas.forEach(function(c){ duplicadosActuales[claveDup(c)] = true; });
 
       var dentro = [], fuera = 0;
-      for(var i=1;i<filas.length;i++){
+      for(var i=filaEncabezados+1;i<filas.length;i++){
         var f = filas[i];
         var obj = {
           rol: String(f[col.rol]||'').trim(),
