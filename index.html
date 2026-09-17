@@ -535,7 +535,7 @@ tr.fila-inconsistente td{background:#fdf3e3!important;}
       <div class="tarjeta">
         <h2>Cargar archivo Excel</h2>
         <p class="subt">Sube el archivo Excel de origen: la plataforma identifica las columnas automáticamente por su nombre, sin importar el orden en que vengan
-        (<b>ROL · AÑO · LIBRO · MATERIA · TIPO · COMPLEJIDAD · ESTADO · RIJA · SUSPENSIÓN · DÍAS PARA REANUDAR · FECHA INGRESO · FECHA RELACIÓN</b> — basta con que estén las columnas ROL, AÑO, LIBRO y FECHA INGRESO; el resto se toma si viene en el archivo).
+        (<b>ROL · AÑO · LIBRO · MATERIA · TIPO · COMPLEJIDAD · ESTADO · RIJA · SUSPENSIÓN · DÍAS PARA REANUDAR · FECHA INGRESO · FECHA RELACIÓN</b> — basta con que estén las columnas ROL, AÑO, LIBRO y FECHA RELACIÓN; el resto se toma si viene en el archivo). El mes se determina por la FECHA RELACIÓN de cada causa.
         Antes de importar se muestra una vista previa: las filas que ya existían quedan destacadas para que el funcionario decida si corresponde eliminarlas,
         y las filas con datos incompletos quedan marcadas para revisión.</p>
         <div class="fila-acciones">
@@ -917,7 +917,7 @@ tr.fila-inconsistente td{background:#fdf3e3!important;}
   <div class="popup-caja popup-caja-ancha">
     <h3>Cargar planilla Excel</h3>
     <div id="excelPaso1">
-      <p class="subt">Selecciona el archivo y confirma el mes que estás cargando. Se analizarán solo las filas cuya FECHA INGRESO caiga en ese mes.
+      <p class="subt">Selecciona el archivo y confirma el mes que estás cargando. Se analizarán solo las filas cuya FECHA RELACIÓN caiga en ese mes.
       Se reconocen las columnas ROL, AÑO, LIBRO, MATERIA, TIPO, COMPLEJIDAD, ESTADO, RIJA, SUSPENSIÓN, DÍAS PARA REANUDAR, FECHA INGRESO y FECHA RELACIÓN, en cualquier orden.</p>
       <div class="campo-editar">
         <label for="excelArchivo">Archivo Excel (.xlsx / .xls)</label>
@@ -2669,9 +2669,9 @@ break;case"<bookViews":;case"<bookViews>":;case"</bookViews>":break;case"<workbo
       filas = filas.filter(function(f){ return f.some(function(c){ return String(c).trim()!==''; }); });
       if(filas.length<2){ mostrarToast('El archivo no tiene filas de datos.', 'error'); return; }
 
-      var filaEncabezados = detectarFilaEncabezados(filas, ['ROL','LIBRO',['ANIO','ANO'],'FECHAINGRESO']);
+      var filaEncabezados = detectarFilaEncabezados(filas, ['ROL','LIBRO',['ANIO','ANO'],'FECHARELACION']);
       if(filaEncabezados===-1){
-        mostrarToast('No se encontraron las columnas ROL, AÑO, LIBRO y FECHA INGRESO en las primeras filas del archivo. Revisa que esos encabezados existan (pueden tener otras columnas antes, no es necesario que sean la fila 1).', 'error');
+        mostrarToast('No se encontraron las columnas ROL, AÑO, LIBRO y FECHA RELACIÓN en las primeras filas del archivo. Revisa que esos encabezados existan (pueden tener otras columnas antes, no es necesario que sean la fila 1).', 'error');
         return;
       }
       var headers = filas[filaEncabezados].map(String);
@@ -2713,7 +2713,7 @@ break;case"<bookViews":;case"<bookViews>":;case"</bookViews>":break;case"<workbo
           fechaSuspension: col.fechaSuspension>-1 ? fechaExcelADDMMYYYY(f[col.fechaSuspension]) : '',
           diasSuspension: col.diasSuspension>-1 ? String(f[col.diasSuspension]||'').trim() : ''
         };
-        var m = obj.fechaIngreso.match(/^(\d{1,2})-(\d{1,2})-(\d{4})$/);
+        var m = obj.fechaRelacion.match(/^(\d{1,2})-(\d{1,2})-(\d{4})$/);
         var coincideMes = m && m[3]===anioMes && ('0'+m[2]).slice(-2)===mesNum;
         if(!coincideMes){ fuera++; continue; }
 
@@ -2721,7 +2721,7 @@ break;case"<bookViews":;case"<bookViews>":;case"</bookViews>":break;case"<workbo
         if(!obj.rol) motivos.push('Falta ROL');
         if(!obj.libro) motivos.push('Falta LIBRO');
         if(!obj.anio) motivos.push('Falta AÑO');
-        if(!m) motivos.push('Fecha ingreso no reconocida');
+        if(!m) motivos.push('Fecha relación no reconocida');
 
         var esInconsistente = motivos.length>0;
         var esDuplicado = !esInconsistente && duplicadosActuales[claveDup(obj)];
@@ -2738,7 +2738,7 @@ break;case"<bookViews":;case"<bookViews>":;case"</bookViews>":break;case"<workbo
   function renderPreviewExcel(fuera, mesInput){
     var cuerpo = document.getElementById('cuerpoPreviewExcel');
     if(filasPreviewExcel.length===0){
-      document.getElementById('excelResumen').innerHTML = 'Ninguna fila del archivo tiene FECHA INGRESO en '+etiquetaMes(mesInput)+'. Revisa el mes elegido.';
+      document.getElementById('excelResumen').innerHTML = 'Ninguna fila del archivo tiene FECHA RELACIÓN en '+etiquetaMes(mesInput)+'. Revisa el mes elegido.';
       cuerpo.innerHTML = '';
     } else {
       var dup = filasPreviewExcel.filter(function(r){return r.duplicado;}).length;
