@@ -2475,7 +2475,8 @@ break;case"<bookViews":;case"<bookViews>":;case"</bookViews>":break;case"<workbo
     confirmarAccion('Se van a actualizar/agregar '+objetos.length+' fila(s) en el listado Stock. ¿Continuar?', {textoOk:'Continuar'}).then(function(ok){
       if(!ok) return;
       llamarServicio({accion:'cargarStock', filas: objetos}).then(function(datos){
-        document.getElementById('resultadoStock').innerHTML = '<p class="aviso">Actualizadas: <b>'+datos.actualizadas+'</b> · Agregadas: <b>'+datos.agregadas+'</b>.</p>';
+        document.getElementById('resultadoStock').innerHTML = '<p class="aviso">Actualizadas: <b>'+datos.actualizadas+'</b> · Agregadas: <b>'+datos.agregadas+'</b>'+
+          (datos.sinMateria>0 ? ' · Sin materia en el archivo (no se tocaron, ya tenían materia cargada): <b>'+datos.sinMateria+'</b>' : '')+'.</p>';
         document.getElementById('pasteStock').value='';
       }).catch(mostrarErrorGlobal);
     });
@@ -2512,16 +2513,12 @@ break;case"<bookViews":;case"<bookViews>":;case"</bookViews>":break;case"<workbo
         mostrarToast('No se pudo leer el archivo. ¿Es un Excel válido (.xlsx/.xls)?', 'error');
         return;
       }
-      var hoja = libro.Sheets[libro.SheetNames[0]];
-      var filas = XLSX.utils.sheet_to_json(hoja, {header:1, defval:''});
-      filas = filas.filter(function(f){ return f.some(function(c){ return String(c).trim()!==''; }); });
-      if(filas.length<2){ mostrarToast('El archivo no tiene filas de datos.', 'error'); return; }
-
-      var filaEncabezados = detectarFilaEncabezados(filas, ['ROL','LIBRO','MATERIA']);
-      if(filaEncabezados===-1){
-        mostrarToast('No se encontraron las columnas ROL, LIBRO y MATERIA en las primeras filas del archivo. Revisa que esos encabezados existan (pueden tener otras columnas antes, no es necesario que sean la fila 1).', 'error');
+      var resultadoHoja = elegirHojaConColumnas(libro, ['ROL','LIBRO','MATERIA'], 'STOCK');
+      if(!resultadoHoja){
+        mostrarToast('No se encontraron las columnas ROL, LIBRO y MATERIA en ninguna hoja del archivo. Revisa que esos encabezados existan (pueden tener otras columnas antes, no es necesario que sean la fila 1).', 'error');
         return;
       }
+      var filas = resultadoHoja.filas, filaEncabezados = resultadoHoja.filaEncabezados;
       var headers = filas[filaEncabezados].map(String);
       var col = {
         rol: buscarColumnaExcel(headers,'ROL'),
@@ -2547,16 +2544,16 @@ break;case"<bookViews":;case"<bookViews>":;case"</bookViews>":break;case"<workbo
       }
 
       filasPreviewExcelStock = dentro;
-      renderPreviewExcelStock();
+      renderPreviewExcelStock(resultadoHoja.nombreHoja);
     };
     lector.readAsArrayBuffer(archivo);
   });
 
-  function renderPreviewExcelStock(){
+  function renderPreviewExcelStock(nombreHoja){
     var cuerpo = document.getElementById('cuerpoPreviewExcelStock');
     var inc = filasPreviewExcelStock.filter(function(r){return r.inconsistente;}).length;
     document.getElementById('excelStockResumen').innerHTML =
-      'Filas leídas: <b>'+filasPreviewExcelStock.length+'</b>'+
+      'Hoja detectada: <b>'+escaparAtributo(nombreHoja)+'</b> · Filas leídas: <b>'+filasPreviewExcelStock.length+'</b>'+
       ' · Con datos incompletos (revisar antes de incluir): <b>'+inc+'</b>'+
       ' · Se actualizará la materia de las que ya existan en Stock y se agregarán las que falten.';
 
@@ -2585,7 +2582,8 @@ break;case"<bookViews":;case"<bookViews>":;case"</bookViews>":break;case"<workbo
     var btn = document.getElementById('btnConfirmarExcelStock');
     btn.disabled = true; btn.textContent='Actualizando...';
     llamarServicio({accion:'cargarStock', filas: seleccionadas}).then(function(datos){
-      document.getElementById('resultadoStock').innerHTML = '<p class="aviso">Actualizadas: <b>'+datos.actualizadas+'</b> · Agregadas: <b>'+datos.agregadas+'</b>.</p>';
+      document.getElementById('resultadoStock').innerHTML = '<p class="aviso">Actualizadas: <b>'+datos.actualizadas+'</b> · Agregadas: <b>'+datos.agregadas+'</b>'+
+        (datos.sinMateria>0 ? ' · Sin materia en el archivo (no se tocaron, ya tenían materia cargada): <b>'+datos.sinMateria+'</b>' : '')+'.</p>';
       mostrarToast('Listado Stock actualizado.', 'exito');
       cerrarModalExcelStock();
     }).catch(mostrarErrorGlobal).finally(function(){ btn.disabled=false; btn.textContent='Confirmar actualización'; });
@@ -2624,6 +2622,32 @@ break;case"<bookViews":;case"<bookViews>":;case"</bookViews>":break;case"<workbo
       if(todasEncontradas) return i;
     }
     return -1;
+  }
+
+  /** Muchos archivos de origen traen varias hojas (ej. "BASE" con todas las causas,
+   *  "STOCK CAUSAS" con el listado de materias, más alguna hoja auxiliar vacía) —
+   *  no siempre la que sirve es la primera, y a veces MÁS DE UNA hoja tiene las
+   *  columnas requeridas (ej. "BASE" también trae MATERIA). Por eso primero se
+   *  prioriza la hoja cuyo NOMBRE sugiere para qué sirve (ej. "STOCK" al cargar
+   *  el listado de materias) y, si ninguna coincide por nombre, recién ahí se cae
+   *  a la primera hoja que simplemente tenga las columnas requeridas. Devuelve
+   *  null si ninguna hoja califica. */
+  function elegirHojaConColumnas(libro, requeridos, pistaNombre){
+    var candidatas = [];
+    for(var h=0; h<libro.SheetNames.length; h++){
+      var hoja = libro.Sheets[libro.SheetNames[h]];
+      var filas = XLSX.utils.sheet_to_json(hoja, {header:1, defval:''});
+      filas = filas.filter(function(f){ return f.some(function(c){ return String(c).trim()!==''; }); });
+      if(filas.length<2) continue;
+      var filaEncabezados = detectarFilaEncabezados(filas, requeridos);
+      if(filaEncabezados>-1) candidatas.push({ nombreHoja: libro.SheetNames[h], filas: filas, filaEncabezados: filaEncabezados });
+    }
+    if(candidatas.length===0) return null;
+    if(pistaNombre){
+      var porNombre = candidatas.find(function(c){ return normalizarTxt(c.nombreHoja).indexOf(normalizarTxt(pistaNombre))>-1; });
+      if(porNombre) return porNombre;
+    }
+    return candidatas[0];
   }
   function fechaExcelADDMMYYYY(v){
     if(v instanceof Date && !isNaN(v)){
@@ -2664,16 +2688,12 @@ break;case"<bookViews":;case"<bookViews>":;case"</bookViews>":break;case"<workbo
         mostrarToast('No se pudo leer el archivo. ¿Es un Excel válido (.xlsx/.xls)?', 'error');
         return;
       }
-      var hoja = libro.Sheets[libro.SheetNames[0]];
-      var filas = XLSX.utils.sheet_to_json(hoja, {header:1, defval:''});
-      filas = filas.filter(function(f){ return f.some(function(c){ return String(c).trim()!==''; }); });
-      if(filas.length<2){ mostrarToast('El archivo no tiene filas de datos.', 'error'); return; }
-
-      var filaEncabezados = detectarFilaEncabezados(filas, ['ROL','LIBRO',['ANIO','ANO'],'FECHARELACION']);
-      if(filaEncabezados===-1){
-        mostrarToast('No se encontraron las columnas ROL, AÑO, LIBRO y FECHA RELACIÓN en las primeras filas del archivo. Revisa que esos encabezados existan (pueden tener otras columnas antes, no es necesario que sean la fila 1).', 'error');
+      var resultadoHoja = elegirHojaConColumnas(libro, ['ROL','LIBRO',['ANIO','ANO'],'FECHARELACION'], 'BASE');
+      if(!resultadoHoja){
+        mostrarToast('No se encontraron las columnas ROL, AÑO, LIBRO y FECHA RELACIÓN en ninguna hoja del archivo. Revisa que esos encabezados existan (pueden tener otras columnas antes, no es necesario que sean la fila 1).', 'error');
         return;
       }
+      var filas = resultadoHoja.filas, filaEncabezados = resultadoHoja.filaEncabezados;
       var headers = filas[filaEncabezados].map(String);
       var col = {
         rol: buscarColumnaExcel(headers,'ROL'),
@@ -2730,21 +2750,21 @@ break;case"<bookViews":;case"<bookViews>":;case"</bookViews>":break;case"<workbo
       }
 
       filasPreviewExcel = dentro;
-      renderPreviewExcel(fuera, mesInput);
+      renderPreviewExcel(fuera, mesInput, resultadoHoja.nombreHoja);
     };
     lector.readAsArrayBuffer(archivo);
   });
 
-  function renderPreviewExcel(fuera, mesInput){
+  function renderPreviewExcel(fuera, mesInput, nombreHoja){
     var cuerpo = document.getElementById('cuerpoPreviewExcel');
     if(filasPreviewExcel.length===0){
-      document.getElementById('excelResumen').innerHTML = 'Ninguna fila del archivo tiene FECHA RELACIÓN en '+etiquetaMes(mesInput)+'. Revisa el mes elegido.';
+      document.getElementById('excelResumen').innerHTML = 'Ninguna fila de la hoja "'+escaparAtributo(nombreHoja)+'" tiene FECHA RELACIÓN en '+etiquetaMes(mesInput)+'. Revisa el mes elegido.';
       cuerpo.innerHTML = '';
     } else {
       var dup = filasPreviewExcel.filter(function(r){return r.duplicado;}).length;
       var inc = filasPreviewExcel.filter(function(r){return r.inconsistente;}).length;
       document.getElementById('excelResumen').innerHTML =
-        'Mes: <b>'+etiquetaMes(mesInput)+'</b> · Filas en ese mes: <b>'+filasPreviewExcel.length+'</b>'+
+        'Hoja detectada: <b>'+escaparAtributo(nombreHoja)+'</b> · Mes: <b>'+etiquetaMes(mesInput)+'</b> · Filas en ese mes: <b>'+filasPreviewExcel.length+'</b>'+
         ' · Ya existían (se ingresarán marcadas): <b>'+dup+'</b>'+
         ' · Con datos incompletos (revisar antes de incluir): <b>'+inc+'</b>'+
         (fuera>0 ? ' · Fuera de ese mes (no se muestran): <b>'+fuera+'</b>' : '');
