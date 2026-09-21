@@ -308,6 +308,8 @@ textarea.paste{width:100%;min-height:140px;padding:var(--e3);border:1px solid va
 .config-nivel select{padding:8px;border:1px solid var(--borde);border-radius:6px;min-width:220px;}
 .grid-config{display:grid;grid-template-columns:1.15fr 1fr;gap:var(--e4);align-items:start;margin-bottom:var(--e4);}
 .grid-config .tarjeta{margin-bottom:0;}
+.tarjeta-peligro{border-color:var(--rojo);box-shadow:0 1px 2px rgba(192,57,43,.08),0 4px 16px rgba(192,57,43,.06);}
+.tarjeta-peligro h2{color:var(--rojo);}
 @media (max-width:900px){ .grid-config{grid-template-columns:1fr;} }
 
 /* -------- Índice de Prioridad: tabla ancha + resumen de puntaje angosto -------- */
@@ -758,6 +760,13 @@ tr.fila-inconsistente td{background:#fdf3e3!important;}
           <button class="btn btn-secundario" id="btnGuardarServicio">Guardar</button>
         </div>
       </div>
+      <div class="tarjeta tarjeta-peligro">
+        <h2>Carga inicial — reemplaza todo el Stock de Causas</h2>
+        <p class="subt">Borra <b>todas</b> las causas actuales de la base de datos y las reemplaza por completo con lo que traiga el Excel que subas. Es para cargar una base desde cero (ej. la planilla definitiva de inicio) — <b>no es para agregar causas de un mes</b>, para eso usa "Ingresos". Esta acción no se puede deshacer.</p>
+        <div class="fila-acciones">
+          <button class="btn btn-peligro" id="btnAbrirReemplazoTotal">Cargar planilla y reemplazar todo</button>
+        </div>
+      </div>
     </section>
 
     <!-- ===== INFORME MENSUAL ===== -->
@@ -980,6 +989,40 @@ tr.fila-inconsistente td{background:#fdf3e3!important;}
       <div class="popup-acciones">
         <button class="btn btn-secundario" id="btnCancelarExcelStock2">Cancelar</button>
         <button class="btn btn-primario" id="btnConfirmarExcelStock">Confirmar actualización</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="modalReemplazoTotal" class="popup-fondo oculto">
+  <div class="popup-caja popup-caja-ancha">
+    <h3 style="color:var(--rojo);">Carga inicial — reemplaza todo</h3>
+    <div id="reemplazoPaso1">
+      <p class="subt"><b>Esto borra todas las causas actuales</b> de la base de datos y las reemplaza por completo con el contenido del archivo que subas. Úsalo solo para una carga inicial desde cero. No se puede deshacer.</p>
+      <div class="campo-editar">
+        <label for="reemplazoArchivo">Archivo Excel (.xlsx / .xls)</label>
+        <input type="file" id="reemplazoArchivo" accept=".xlsx,.xls">
+      </div>
+      <div class="popup-acciones">
+        <button class="btn btn-secundario" id="btnCancelarReemplazo1">Cancelar</button>
+        <button class="btn btn-primario" id="btnAnalizarReemplazo">Analizar archivo</button>
+      </div>
+    </div>
+    <div id="reemplazoPaso2" class="oculto">
+      <p class="subt" id="reemplazoResumen"></p>
+      <div class="contenedor-tabla" style="max-height:300px;">
+        <table class="datos" id="tablaPreviewReemplazo">
+          <thead><tr><th>ROL</th><th>AÑO</th><th>LIBRO</th><th>MATERIA</th><th>TIPO</th><th>ESTADO</th><th>FECHA INGRESO</th><th>FECHA RELACIÓN</th><th>Validación</th></tr></thead>
+          <tbody id="cuerpoPreviewReemplazo"></tbody>
+        </table>
+      </div>
+      <p class="subt" style="margin-top:var(--e3);color:var(--rojo);">Para confirmar, escribe <b>REEMPLAZAR</b> en el cuadro:</p>
+      <div class="campo-editar" style="max-width:260px;">
+        <input class="buscador" id="reemplazoConfirmacionTexto" placeholder="Escribe REEMPLAZAR" autocomplete="off">
+      </div>
+      <div class="popup-acciones">
+        <button class="btn btn-secundario" id="btnCancelarReemplazo2">Cancelar</button>
+        <button class="btn btn-peligro" id="btnConfirmarReemplazo" disabled>Borrar todo y cargar</button>
       </div>
     </div>
   </div>
@@ -2845,6 +2888,151 @@ break;case"<bookViews":;case"<bookViews>":;case"</bookViews>":break;case"<workbo
     }).then(function(datos){
       estado.causas=datos.causas; actualizarResumenHeader(); renderStock(); renderReportesLocal();
     }).catch(mostrarErrorGlobal).finally(function(){ btn.disabled=false; btn.textContent='Confirmar importación'; });
+  });
+
+  /* ================= CARGA INICIAL (REEMPLAZA TODO) ================= */
+  var modalReemplazoTotal = document.getElementById('modalReemplazoTotal');
+  var filasPreviewReemplazo = [];
+
+  function abrirModalReemplazoTotal(){
+    document.getElementById('reemplazoArchivo').value='';
+    document.getElementById('reemplazoConfirmacionTexto').value='';
+    document.getElementById('btnConfirmarReemplazo').disabled = true;
+    document.getElementById('reemplazoPaso1').classList.remove('oculto');
+    document.getElementById('reemplazoPaso2').classList.add('oculto');
+    filasPreviewReemplazo = [];
+    modalReemplazoTotal.classList.remove('oculto');
+  }
+  function cerrarModalReemplazoTotal(){ modalReemplazoTotal.classList.add('oculto'); }
+
+  document.getElementById('btnAbrirReemplazoTotal').addEventListener('click', abrirModalReemplazoTotal);
+  document.getElementById('btnCancelarReemplazo1').addEventListener('click', cerrarModalReemplazoTotal);
+  document.getElementById('btnCancelarReemplazo2').addEventListener('click', cerrarModalReemplazoTotal);
+  modalReemplazoTotal.addEventListener('click', function(e){ if(e.target===modalReemplazoTotal) cerrarModalReemplazoTotal(); });
+
+  document.getElementById('btnAnalizarReemplazo').addEventListener('click', function(){
+    var archivo = document.getElementById('reemplazoArchivo').files[0];
+    if(!archivo){ mostrarToast('Selecciona un archivo Excel.', 'error'); return; }
+
+    var lector = new FileReader();
+    lector.onload = function(e){
+      var libro;
+      try{
+        libro = XLSX.read(new Uint8Array(e.target.result), {type:'array', cellDates:true});
+      }catch(err){
+        mostrarToast('No se pudo leer el archivo. ¿Es un Excel válido (.xlsx/.xls)?', 'error');
+        return;
+      }
+      var resultadoHoja = elegirHojaConColumnas(libro, ['ROL','LIBRO',['ANIO','ANO']], 'BASE');
+      if(!resultadoHoja){
+        mostrarToast('No se encontraron las columnas ROL, AÑO y LIBRO en ninguna hoja del archivo.', 'error');
+        return;
+      }
+      var filas = resultadoHoja.filas, filaEncabezados = resultadoHoja.filaEncabezados;
+      var headers = filas[filaEncabezados].map(String);
+      var col = {
+        rol: buscarColumnaExcel(headers,'ROL'),
+        anio: (function(){ var i=buscarColumnaExcel(headers,'ANIO'); return i>-1?i:buscarColumnaExcel(headers,'ANO'); })(),
+        libro: buscarColumnaExcel(headers,'LIBRO'),
+        fechaIngreso: buscarColumnaExcel(headers,'FECHAINGRESO'),
+        observacion: buscarColumnaExcel(headers,'OBSERVACION'),
+        fechaRelacion: buscarColumnaExcel(headers,'FECHARELACION'),
+        materia: buscarColumnaExcel(headers,'MATERIA'),
+        tipo: buscarColumnaExcel(headers,'TIPO'),
+        complejidad: buscarColumnaExcel(headers,'COMPLEJIDAD'),
+        estado: buscarColumnaExcel(headers,'ESTADO'),
+        rija: buscarColumnaExcel(headers,'RIJA'),
+        fechaSuspension: buscarColumnaExcel(headers,'SUSPENSION'),
+        diasSuspension: (function(){ var i=buscarColumnaExcel(headers,'DIASPARAREANUDAR'); return i>-1?i:buscarColumnaExcel(headers,'DIAS'); })()
+      };
+
+      var vistas = [];
+      var clavesVistas = {};
+      var duplicadasInternas = 0;
+      for(var i=filaEncabezados+1;i<filas.length;i++){
+        var f = filas[i];
+        var obj = {
+          rol: String(f[col.rol]||'').trim(),
+          anio: String(f[col.anio]||'').trim(),
+          libro: String(f[col.libro]||'').trim(),
+          fechaIngreso: col.fechaIngreso>-1 ? fechaExcelADDMMYYYY(f[col.fechaIngreso]) : '',
+          observacion: col.observacion>-1 ? String(f[col.observacion]||'').trim() : '',
+          fechaRelacion: col.fechaRelacion>-1 ? fechaExcelADDMMYYYY(f[col.fechaRelacion]) : '',
+          materia: col.materia>-1 ? String(f[col.materia]||'').trim() : '',
+          tipo: col.tipo>-1 ? String(f[col.tipo]||'').trim() : '',
+          complejidad: col.complejidad>-1 ? String(f[col.complejidad]||'').trim() : '',
+          estado: col.estado>-1 ? String(f[col.estado]||'').trim() : '',
+          rija: col.rija>-1 ? String(f[col.rija]||'').trim() : '',
+          fechaSuspension: col.fechaSuspension>-1 ? fechaExcelADDMMYYYY(f[col.fechaSuspension]) : '',
+          diasSuspension: col.diasSuspension>-1 ? String(f[col.diasSuspension]||'').trim() : ''
+        };
+        var motivos = [];
+        if(!obj.rol) motivos.push('Falta ROL');
+        if(!obj.libro) motivos.push('Falta LIBRO');
+        if(!obj.anio) motivos.push('Falta AÑO');
+        var esInconsistente = motivos.length>0;
+        if(!esInconsistente){
+          var clave = claveDup(obj);
+          if(clavesVistas[clave]) duplicadasInternas++;
+          clavesVistas[clave] = true;
+        }
+        vistas.push({ obj:obj, inconsistente:esInconsistente, motivos:motivos });
+      }
+
+      filasPreviewReemplazo = vistas;
+      renderPreviewReemplazo(resultadoHoja.nombreHoja, duplicadasInternas);
+    };
+    lector.readAsArrayBuffer(archivo);
+  });
+
+  function renderPreviewReemplazo(nombreHoja, duplicadasInternas){
+    var validas = filasPreviewReemplazo.filter(function(r){ return !r.inconsistente; });
+    var inconsistentes = filasPreviewReemplazo.length - validas.length;
+    var actualesCount = estado.causas.length;
+
+    document.getElementById('reemplazoResumen').innerHTML =
+      'Hoja detectada: <b>'+escaparAtributo(nombreHoja)+'</b> · Filas válidas a cargar: <b>'+validas.length+'</b>'+
+      (inconsistentes>0 ? ' · Con datos incompletos (se excluyen): <b>'+inconsistentes+'</b>' : '')+
+      (duplicadasInternas>0 ? ' · Repetidas dentro del propio archivo (se cargan igual, quedarán marcadas): <b>'+duplicadasInternas+'</b>' : '')+
+      ' · <span style="color:var(--rojo);">Se van a borrar las <b>'+actualesCount+'</b> causas actuales.</span>';
+
+    var cuerpo = document.getElementById('cuerpoPreviewReemplazo');
+    var muestra = filasPreviewReemplazo.slice(0, 50);
+    cuerpo.innerHTML = muestra.map(function(r){
+      var badge = r.inconsistente
+        ? '<span class="badge-estado-fila badge-inc" title="'+escaparAtributo(r.motivos.join('; '))+'">Revisar: '+escaparAtributo(r.motivos.join(', '))+'</span>'
+        : '<span class="badge-estado-fila badge-ok">OK</span>';
+      var clase = r.inconsistente ? 'fila-inconsistente' : '';
+      return '<tr class="'+clase+'">'+
+        '<td>'+escaparAtributo(r.obj.rol)+'</td><td>'+escaparAtributo(r.obj.anio)+'</td><td>'+escaparAtributo(r.obj.libro)+'</td>'+
+        '<td>'+escaparAtributo(r.obj.materia)+'</td><td>'+escaparAtributo(r.obj.tipo)+'</td><td>'+escaparAtributo(r.obj.estado)+'</td>'+
+        '<td>'+escaparAtributo(r.obj.fechaIngreso)+'</td><td>'+escaparAtributo(r.obj.fechaRelacion)+'</td>'+
+        '<td>'+badge+'</td></tr>';
+    }).join('');
+    if(filasPreviewReemplazo.length > muestra.length){
+      cuerpo.innerHTML += '<tr><td colspan="9" style="text-align:center;color:var(--texto-suave);">… y '+(filasPreviewReemplazo.length-muestra.length)+' fila(s) más (se cargan todas, esto es solo una muestra)</td></tr>';
+    }
+
+    document.getElementById('reemplazoPaso1').classList.add('oculto');
+    document.getElementById('reemplazoPaso2').classList.remove('oculto');
+  }
+
+  document.getElementById('reemplazoConfirmacionTexto').addEventListener('input', function(){
+    document.getElementById('btnConfirmarReemplazo').disabled = this.value.trim() !== 'REEMPLAZAR';
+  });
+
+  document.getElementById('btnConfirmarReemplazo').addEventListener('click', function(){
+    var validas = filasPreviewReemplazo.filter(function(r){ return !r.inconsistente; }).map(function(r){ return r.obj; });
+    if(validas.length===0){ mostrarToast('No hay filas válidas para cargar.', 'error'); return; }
+    var btn = document.getElementById('btnConfirmarReemplazo');
+    btn.disabled = true; btn.textContent='Reemplazando...';
+    llamarServicio({accion:'reemplazarBaseDatos', filas: validas, confirmar:'REEMPLAZAR_TODO'}).then(function(datos){
+      mostrarToast('Base de causas reemplazada: '+datos.borradas+' borradas, '+datos.cargadas+' cargadas.', 'exito');
+      cerrarModalReemplazoTotal();
+      return llamarServicio({accion:'listar'});
+    }).then(function(datos){
+      estado.causas=datos.causas; actualizarResumenHeader(); renderStock(); renderReportesLocal();
+    }).catch(mostrarErrorGlobal).finally(function(){ btn.disabled=false; btn.textContent='Borrar todo y cargar'; });
   });
 
   /* ================= CONFIG ================= */
